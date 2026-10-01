@@ -6,8 +6,8 @@ import s from "./CommunityHeader.module.scss";
 
 export function CommunityHeader({ community, asset }: { community: Community; asset?: Asset }) {
   return (
-    <section className={s.header} aria-labelledby="community-name">
-      <div className={s.glow} style={{ background: `radial-gradient(circle at 30% 0%, hsl(${community.hue} 85% 60% / 0.35), transparent 70%)` }} />
+    <section className={s.header} aria-labelledby="community-name" style={{ "--h": community.hue } as React.CSSProperties}>
+      <div className={s.cover} aria-hidden="true" />
       <div className={s.top}>
         <CommunityBadge community={community} size={64} />
         <div className={s.id}>

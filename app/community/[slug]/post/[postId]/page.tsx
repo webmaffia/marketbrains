@@ -1,10 +1,11 @@
+import { PageBanner } from "@/components/layout/PageBanner";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { CommentThread } from "@/components/post/CommentThread";
 import { PostCard } from "@/components/post/PostCard";
 import { LocalPostView } from "@/features/community/LocalPostView";
-import { getComments, getPost, getPosts } from "@/lib/api";
+import { getComments, getCommunity, getPost, getPosts } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
 
 export async function generateStaticParams() {
@@ -40,10 +41,11 @@ export default async function PostPage({ params }: PageProps<"/community/[slug]/
     );
   }
 
-  const comments = await getComments(postId);
+  const [comments, community] = await Promise.all([getComments(postId), getCommunity(slug)]);
   return (
     <>
       <TopBar title="Discussion" back fallbackHref={`/community/${slug}`} />
+      {community && <PageBanner size="slim" eyebrow="Discussing in" title={community.name} icon="users" hue={community.hue} cta={{ label: "Open community", href: `/community/${slug}` }} />}
       <PostCard post={post} dir={dir} detail />
       <CommentThread postId={post.id} comments={comments} dir={dir} />
     </>

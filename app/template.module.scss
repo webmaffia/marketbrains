@@ -1,0 +1,9 @@
+// Opacity only: a transform here would become the containing block for fixed children.
+.page {
+  animation: enter 0.22s ease-out both;
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+  }
+}

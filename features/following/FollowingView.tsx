@@ -1,5 +1,7 @@
 "use client";
 
+import { PageBanner } from "@/components/layout/PageBanner";
+
 import { useState } from "react";
 import Link from "next/link";
 import { CommunityCard } from "@/components/community/CommunityCard";
@@ -20,6 +22,8 @@ export function FollowingView({ communities, users }: { communities: Community[]
 
   if (!isLoggedIn) {
     return (
+      <>
+      <PageBanner title="Your circle" text="The people and communities you learn from, in one place." icon="users" hue={160} />
       <EmptyState
         icon="users"
         title="Follow what matters to you"
@@ -33,6 +37,7 @@ export function FollowingView({ communities, users }: { communities: Community[]
           </div>
         }
       />
+      </>
     );
   }
 
@@ -42,6 +47,7 @@ export function FollowingView({ communities, users }: { communities: Community[]
 
   return (
     <>
+      <PageBanner size="slim" title="Your circle" text="People and communities you learn from." icon="users" hue={160} />
       <SegmentTabs
         variant="pill"
         label="Following"

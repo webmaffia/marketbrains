@@ -37,6 +37,10 @@
   }
 }
 .scroll {
+  // Banner is full-width inside the padded scroller.
+  > section:first-child {
+    margin: 0 0 var(--sp-3);
+  }
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;

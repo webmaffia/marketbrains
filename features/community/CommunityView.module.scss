@@ -1,25 +1,25 @@
 @use "tokens" as *;
 
 .pad {
-  padding: var(--sp-3) var(--sp-4);
-  // Posts bring their own horizontal margin.
+  padding: var(--sp-2) var(--sp-4);
+  // Posts are full-bleed rows; cancel the container padding for them.
   :global(article) {
-    margin-left: 0;
-    margin-right: 0;
+    margin-left: calc(var(--sp-4) * -1);
+    margin-right: calc(var(--sp-4) * -1);
   }
 }
 .cards {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
 }
 .news,
 .member,
 .about {
-  padding: var(--sp-4);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  padding: var(--sp-4) 0;
+  border-bottom: 0.5px solid var(--line);
+}
+.about {
+  padding-top: var(--sp-2);
 }
 .src {
   font-size: 12.5px;
@@ -86,10 +86,7 @@
   }
 }
 .qs {
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
+  border-top: 0.5px solid var(--line);
   li + li {
     border-top: 0.5px solid var(--line);
   }
@@ -108,7 +105,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3);
+  padding: var(--sp-3) 0;
 }
 .mlink {
   display: flex;

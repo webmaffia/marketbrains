@@ -1,5 +1,5 @@
 /* MarketBrains service worker: offline shell + runtime caching. Bump VERSION to invalidate caches. */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `mb-shell-${VERSION}`;
 const RUNTIME = `mb-runtime-${VERSION}`;
 const SHELL_URLS = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];

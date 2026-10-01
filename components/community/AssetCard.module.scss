@@ -1,35 +1,42 @@
 @use "tokens" as *;
 
 .card {
+  position: relative;
   display: flex;
   flex: none;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 2px;
-  width: 148px;
-  padding: var(--sp-4);
+  width: 140px;
+  height: 160px;
+  padding: var(--sp-3);
+  overflow: hidden;
   border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  color: #fff;
+  background: linear-gradient(160deg, hsl(var(--h) 75% 52%), hsl(calc(var(--h) - 25) 70% 26%));
   scroll-snap-align: start;
   @include press;
   @include focus-ring;
   > :first-child {
-    margin-bottom: 10px;
+    position: absolute;
+    top: var(--sp-3);
+    left: var(--sp-3);
+    background: rgba(255, 255, 255, 0.22) !important;
+    backdrop-filter: blur(8px);
   }
 }
 .name {
-  min-height: 2.5em;
-  line-height: 1.25;
-  font-weight: 700;
+  font-weight: 750;
+  line-height: 1.2;
   @include truncate(2);
 }
 .sub {
-  font-size: 12.5px;
-  color: var(--text-3);
+  font-size: 12px;
+  opacity: 0.8;
 }
 .stat {
-  margin-top: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--accent);
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  opacity: 0.95;
 }

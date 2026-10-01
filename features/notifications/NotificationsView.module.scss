@@ -9,11 +9,8 @@
   font-weight: 700;
 }
 .group {
-  margin: 0 16px;
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
+  margin: 0;
+  border-top: 0.5px solid var(--line);
   > * + * {
     border-top: 0.5px solid var(--line);
   }

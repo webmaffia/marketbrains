@@ -1,5 +1,7 @@
 "use client";
 
+import { PageBanner } from "@/components/layout/PageBanner";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/layout/BackButton";
@@ -125,6 +127,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
       </header>
 
       <div className={s.scroll}>
+        <PageBanner size="slim" title="Start a thoughtful discussion" text="Ask, explain or challenge. Skip the tips and calls." icon="comment" hue={265} />
         <button type="button" className={s.picker} onClick={() => setSheet("community")}>
           {community ? (
             <>

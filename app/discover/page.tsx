@@ -1,3 +1,4 @@
+import { PageBanner } from "@/components/layout/PageBanner";
 import type { Metadata } from "next";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -15,6 +16,7 @@ export default async function DiscoverPage() {
   return (
     <>
       <TopBar title="Discover" />
+      <PageBanner eyebrow="Communities" title="Find your people, not just your stocks" text="NSE, NASDAQ, crypto, sectors and themes, all discussion-first." icon="compass" hue={205} />
       <div style={{ padding: "12px 16px 4px" }}>
         <SearchBar href="/search" placeholder="Search communities, people, topics" />
       </div>

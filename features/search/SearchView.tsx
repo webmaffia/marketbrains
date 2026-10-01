@@ -1,5 +1,7 @@
 "use client";
 
+import { PageBanner } from "@/components/layout/PageBanner";
+
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { CommunityCard } from "@/components/community/CommunityCard";
@@ -40,6 +42,8 @@ export function SearchView({ communities, users, posts, dir }: Props) {
       </div>
 
       {!deferred && (
+        <>
+        <PageBanner size="slim" title="Explore the conversation" text="Companies, people and ideas." icon="search" hue={190} />
         <section className={s.sugg} aria-label="Suggested searches">
           <h2>Try searching for</h2>
           <div className={s.chips}>
@@ -48,6 +52,7 @@ export function SearchView({ communities, users, posts, dir }: Props) {
             ))}
           </div>
         </section>
+        </>
       )}
 
       {none && <EmptyState icon="search" title="No matches" text={`Nothing found for “${q}”. Try a company, person or topic.`} />}

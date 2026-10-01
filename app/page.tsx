@@ -1,3 +1,4 @@
+import { PageBanner } from "@/components/layout/PageBanner";
 import { HomeFeed } from "@/features/home/HomeFeed";
 import { HomeHeader } from "@/features/home/HomeHeader";
 import { getPosts } from "@/lib/api";
@@ -8,6 +9,14 @@ export default async function HomePage() {
   return (
     <>
       <HomeHeader />
+      <PageBanner
+        eyebrow="Debate of the day"
+        title="Is Tesla valued as a car company or an AI company?"
+        text="112 investors are weighing in."
+        icon="flame"
+        hue={12}
+        cta={{ label: "Join the debate", href: "/community/tesla/post/p6" }}
+      />
       <HomeFeed posts={posts} dir={dir} />
     </>
   );

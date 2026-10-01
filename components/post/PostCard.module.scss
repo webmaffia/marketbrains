@@ -2,21 +2,24 @@
 
 .card {
   position: relative;
-  margin: var(--sp-3) var(--sp-4);
   padding: var(--sp-4) var(--sp-4) var(--sp-1);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  border-bottom: 0.5px solid var(--line);
   animation: enter 0.35s ease both;
+  transition: background-color 0.15s;
+  &:active {
+    background: var(--surface);
+  }
   &:has(.stretch:focus-visible) {
     outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
 }
 .detail {
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
+  border-bottom: 0.5px solid var(--line);
   animation: none;
+  &:active {
+    background: none;
+  }
 }
 .head {
   display: flex;
@@ -86,8 +89,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: var(--r-lg);
-  }
+    }
 }
 .body {
   margin-top: 6px;

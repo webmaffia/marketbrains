@@ -1,5 +1,7 @@
 "use client";
 
+import { PageBanner } from "@/components/layout/PageBanner";
+
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
@@ -20,6 +22,8 @@ export function MyProfile({ user, posts, communities, dir }: Props) {
 
   if (!isLoggedIn) {
     return (
+      <>
+      <PageBanner title="Your investing identity" text="Build reputation through the quality of your contributions." icon="user" hue={270} />
       <EmptyState
         icon="user"
         title="Your investing identity"
@@ -33,6 +37,7 @@ export function MyProfile({ user, posts, communities, dir }: Props) {
           </div>
         }
       />
+      </>
     );
   }
 

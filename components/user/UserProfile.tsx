@@ -28,6 +28,7 @@ export function UserProfile({ user, posts, communities, dir, isSelf }: Props) {
 
   return (
     <>
+      <div className={s.cover} style={{ "--h": user.hue } as React.CSSProperties} aria-hidden="true" />
       <section className={s.head}>
         <UserAvatar user={user} size={84} />
         <h2 className={s.name}>

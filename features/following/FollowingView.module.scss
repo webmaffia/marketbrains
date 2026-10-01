@@ -10,11 +10,8 @@
   min-width: 220px;
 }
 .group {
-  margin: 0 var(--sp-4);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
+  margin: 0;
+  border-top: 0.5px solid var(--line);
   > * + * {
     border-top: 0.5px solid var(--line);
   }
