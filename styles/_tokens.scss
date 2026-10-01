@@ -45,6 +45,22 @@ $bp-tablet: 600px;
   }
 }
 
+// Shared card-feed rhythm: gutter + gap between boxed cards (posts, suggestions, pulses, digests).
+@mixin feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+
+// The boxed-card surface shared by every feed card type (posts, suggestions, pulses, digests).
+@mixin feed-card {
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--line), 0 1px 3px rgba(31, 20, 60, 0.05);
+}
+
 @mixin truncate($lines: 1) {
   overflow: hidden;
   @if $lines == 1 {

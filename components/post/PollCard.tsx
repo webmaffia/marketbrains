@@ -29,7 +29,7 @@ export function PollCard({ postId, poll }: { postId: string; poll: Poll }) {
               >
                 {chosen && <span className={s.fill} style={{ width: `${pct}%` }} />}
                 <span className={s.label}>
-                  {chosen === o.id && <Icon name="check" size={16} />}
+                  {chosen === o.id && <Icon name="check" size={14} />}
                   {o.label}
                 </span>
                 {chosen && <span className={s.pct}>{pct}%</span>}

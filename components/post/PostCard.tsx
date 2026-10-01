@@ -46,12 +46,12 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
     <article className={cx(s.card, detail && s.detail)}>
       <header className={s.head}>
         <Link href={`/user/${author.username}`} className={s.author} aria-label={`${author.name}'s profile`}>
-          <UserAvatar user={author} size={40} />
+          <UserAvatar user={author} size={detail ? 40 : 32} />
         </Link>
         <div className={s.who}>
           <Link href={`/user/${author.username}`} className={s.name}>
             {author.name}
-            {author.verified && <Icon name="verified" size={14} filled className={s.verified} />}
+            {author.verified && <Icon name="verified" size={12} filled className={s.verified} />}
           </Link>
           <p className={s.sub}>
             {!hideCommunity && (
@@ -65,16 +65,17 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
             {timeAgo(post.ageMin)}
           </p>
         </div>
-        {post.stance && post.stance !== "neutral" && (
-          <span className={cx(s.stance, s[post.stance])}>
-            <Icon name={post.stance} size={14} />
-            {stanceLabel[post.stance]}
-          </span>
-        )}
       </header>
 
+      {post.stance && post.stance !== "neutral" && (
+        <span className={cx(s.stance, s[post.stance])}>
+          <Icon name={post.stance} size={14} />
+          {stanceLabel[post.stance]}
+        </span>
+      )}
+
       {detail ? (
-        <h2 className={s.title}>{post.title}</h2>
+        <h2 className={cx(s.title, s.titleDetail)}>{post.title}</h2>
       ) : (
         <h2 className={s.title}>
           <Link href={href} className={s.stretch}>
@@ -86,7 +87,7 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
 
       {post.hasImage && (
         <div className={s.image} role="img" aria-label="Image attachment placeholder">
-          <Icon name="image" size={28} />
+          <Icon name="image" size={22} />
         </div>
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} />}
@@ -106,15 +107,15 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
       <footer className={s.foot}>
         <LikeButton active={isLiked} count={post.likes + (isLiked ? 1 : 0)} onToggle={() => toggleLike(post.id)} />
         <Link href={href} className={a.action} aria-label={`${commentCount} comments`}>
-          <Icon name="comment" size={20} />
+          <Icon name="comment" size={18} />
           <span>{commentCount}</span>
         </Link>
         <span className={s.spacer} />
         <button type="button" className={cx(a.action, isSaved && a.saved)} onClick={() => toggleSave(post.id)} aria-pressed={isSaved} aria-label={isSaved ? "Unsave post" : "Save post"}>
-          <Icon name="bookmark" size={20} filled={isSaved} />
+          <Icon name="bookmark" size={18} filled={isSaved} />
         </button>
         <button type="button" className={a.action} onClick={share} aria-label="Share post">
-          <Icon name="share" size={20} />
+          <Icon name="share" size={18} />
         </button>
       </footer>
     </article>

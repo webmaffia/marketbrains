@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { SegmentTabs } from "@/components/ui/SegmentTabs";
-import { PostList } from "@/components/post/PostList";
 import { useStore } from "@/features/store/StoreProvider";
-import type { Directory, Post } from "@/types";
+import type { Community, Directory, NewsItem, Post } from "@/types";
+import { buildMixedFeed } from "./buildFeed";
+import { MixedFeed } from "./MixedFeed";
+import s from "./HomeFeed.module.scss";
 
 type Tab = "for-you" | "trending" | "popular" | "following";
 const tabs: { id: Tab; label: string }[] = [
@@ -15,12 +17,18 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "popular", label: "Popular" },
   { id: "following", label: "Following" },
 ];
+const heading: Record<Tab, string> = {
+  "for-you": "Latest discussions",
+  trending: "Trending now",
+  popular: "Most popular",
+  following: "From your circle",
+};
 
 const engagement = (p: Post) => p.likes + p.comments * 2;
 
-export function HomeFeed({ posts, dir }: { posts: Post[]; dir: Directory }) {
+export function HomeFeed({ posts, dir, communities, news }: { posts: Post[]; dir: Directory; communities: Community[]; news: NewsItem[] }) {
   const [tab, setTab] = useState<Tab>("for-you");
-  const { joined, following, isLoggedIn, openAuth } = useStore();
+  const { joined, following, isLoggedIn, openAuth, myPosts } = useStore();
 
   const list = useMemo(() => {
     switch (tab) {
@@ -40,6 +48,10 @@ export function HomeFeed({ posts, dir }: { posts: Post[]; dir: Directory }) {
     }
   }, [tab, posts, joined, following, isLoggedIn]);
 
+  const mineAll = tab === "for-you" || tab === "following";
+  const combined = useMemo(() => (mineAll ? [...myPosts, ...list] : list), [mineAll, myPosts, list]);
+  const items = useMemo(() => buildMixedFeed(combined, communities, news), [combined, communities, news]);
+
   const empty =
     tab === "following" && !isLoggedIn ? (
       <EmptyState icon="users" title="Your circle lives here" text="Sign in to see discussions from people and communities you follow." action={<Button onClick={() => openAuth("Sign in to see your following feed")}>Sign in</Button>} />
@@ -51,7 +63,8 @@ export function HomeFeed({ posts, dir }: { posts: Post[]; dir: Directory }) {
     <>
       <SegmentTabs tabs={tabs} value={tab} onChange={setTab} label="Feed" idPrefix="feed" />
       <div role="tabpanel" aria-labelledby={`feed-${tab}`} key={tab}>
-        <PostList posts={list} dir={dir} mineAll={tab === "for-you" || tab === "following"} empty={empty} />
+        {combined.length > 0 && <p className={s.heading}>{heading[tab]}</p>}
+        {combined.length === 0 ? empty : <MixedFeed items={items} dir={dir} />}
       </div>
     </>
   );

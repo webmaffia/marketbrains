@@ -1,11 +1,11 @@
 import { PageBanner } from "@/components/layout/PageBanner";
 import { HomeFeed } from "@/features/home/HomeFeed";
 import { HomeHeader } from "@/features/home/HomeHeader";
-import { getPosts } from "@/lib/api";
+import { getAllNews, getCommunities, getPosts } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
 
 export default async function HomePage() {
-  const [posts, dir] = await Promise.all([getPosts(), getDirectory()]);
+  const [posts, dir, communities, news] = await Promise.all([getPosts(), getDirectory(), getCommunities(), getAllNews()]);
   return (
     <>
       <HomeHeader />
@@ -17,7 +17,7 @@ export default async function HomePage() {
         hue={12}
         cta={{ label: "Join the debate", href: "/community/tesla/post/p6" }}
       />
-      <HomeFeed posts={posts} dir={dir} />
+      <HomeFeed posts={posts} dir={dir} communities={communities} news={news} />
     </>
   );
 }

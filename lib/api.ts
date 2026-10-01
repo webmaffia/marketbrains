@@ -51,3 +51,6 @@ export async function getNotifications(): Promise<Notification[]> {
 export async function getNews(slug: string): Promise<NewsItem[]> {
   return news.filter((n) => n.communitySlug === slug);
 }
+export async function getAllNews(): Promise<NewsItem[]> {
+  return news;
+}

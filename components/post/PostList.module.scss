@@ -1,0 +1,5 @@
+@use "tokens" as *;
+
+.feed {
+  @include feed-list;
+}

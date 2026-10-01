@@ -5,7 +5,7 @@ import { PageBanner } from "@/components/layout/PageBanner";
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { CommunityCard } from "@/components/community/CommunityCard";
-import { PostCard } from "@/components/post/PostCard";
+import { PostList } from "@/components/post/PostList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { TopicChip } from "@/components/ui/TopicChip";
@@ -90,9 +90,7 @@ export function SearchView({ communities, users, posts, dir }: Props) {
         {ps.length > 0 && (
           <section>
             <h2 className={s.h}>Discussions</h2>
-            {ps.map((p) => (
-              <PostCard key={p.id} post={p} dir={dir} />
-            ))}
+            <PostList posts={ps} dir={dir} />
           </section>
         )}
       </div>

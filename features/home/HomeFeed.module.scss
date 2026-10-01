@@ -1,0 +1,10 @@
+@use "tokens" as *;
+
+.heading {
+  padding: var(--sp-3) var(--sp-3) 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
