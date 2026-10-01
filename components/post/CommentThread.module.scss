@@ -1,7 +1,7 @@
 @use "tokens" as *;
 
 .thread {
-  padding-bottom: calc(80px + var(--safe-bottom));
+  padding-bottom: calc(80px + var(--nav-total));
 }
 .heading {
   padding: var(--sp-4) var(--sp-4) var(--sp-2);
@@ -73,12 +73,12 @@
   @include glass(24px);
   position: fixed;
   left: 50%;
-  bottom: 0;
+  bottom: var(--nav-total);
   z-index: 60;
   width: 100%;
   max-width: 480px;
   transform: translateX(-50%);
-  padding: 10px var(--sp-3) calc(10px + var(--safe-bottom));
+  padding: 10px var(--sp-3);
   border-width: 0.5px 0 0;
   border-top-color: var(--line);
 }

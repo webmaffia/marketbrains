@@ -10,18 +10,19 @@
   --bear: #ff6b60;
   --bear-soft: rgba(255, 107, 96, 0.16);
 
-  --bg: #0a0a12;
-  --surface: #14141f;
-  --surface-2: #1d1d2b;
-  --text: #f4f4f8;
-  --text-2: #a9a9bd;
-  --text-3: #6c6c84;
-  --line: rgba(255, 255, 255, 0.07);
-  --glass: rgba(12, 12, 20, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --bg: #f2f0f7;
+  --surface: #ffffff;
+  --surface-2: #eae7f1;
+  --text: #1d1b24;
+  --text-2: #67647a;
+  --text-3: #86839c;
+  --line: rgba(29, 20, 60, 0.08);
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-shine: rgba(255, 255, 255, 0.9);
   --shadow-1: none;
-  --shadow-2: 0 -8px 40px rgba(0, 0, 0, 0.5);
-  --scrim: rgba(0, 0, 0, 0.62);
+  --shadow-2: 0 -8px 40px rgba(31, 20, 60, 0.12);
+  --scrim: rgba(22, 16, 38, 0.45);
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -37,11 +38,11 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-h: 54px;
-  --nav-total: calc(var(--nav-h) + var(--safe-bottom));
+  --nav-total: calc(var(--nav-h) + var(--safe-bottom) + 30px);
   --topbar-h: 48px;
 
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", Roboto, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,

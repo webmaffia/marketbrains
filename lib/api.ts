@@ -33,6 +33,9 @@ export async function getPosts(): Promise<Post[]> {
 export async function getPost(id: string): Promise<Post | undefined> {
   return posts.find((p) => p.id === id);
 }
+export async function getPolls(): Promise<Post[]> {
+  return posts.filter((p) => !!p.poll);
+}
 export async function getPostsByCommunity(slug: string): Promise<Post[]> {
   return posts.filter((p) => p.communitySlug === slug || p.topics.includes(slug));
 }

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description,
   applicationName: "MarketBrains",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "MarketBrains", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "MarketBrains", statusBarStyle: "default" },
   formatDetection: { telephone: false },
   icons: {
     icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
-  themeColor: "#0a0a12",
+  themeColor: "#f2f0f7",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

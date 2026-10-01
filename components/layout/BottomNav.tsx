@@ -9,23 +9,26 @@ import s from "./BottomNav.module.scss";
 const items: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "compass" },
+  { href: "/polls", label: "Polls", icon: "poll" },
   { href: "/following", label: "Following", icon: "users" },
   { href: "/notifications", label: "Alerts", icon: "bell" },
   { href: "/profile", label: "Profile", icon: "user" },
 ];
 
-const HIDDEN = [/^\/create/, /^\/search/, /^\/community\/[^/]+\/post\//];
-
 export function BottomNav({ notificationIds }: { notificationIds: string[] }) {
   const pathname = usePathname();
   const { isLoggedIn, readNotifs } = useStore();
-  if (HIDDEN.some((r) => r.test(pathname))) return null;
 
   const unread = isLoggedIn ? notificationIds.filter((id) => !readNotifs.includes(id)).length : 0;
+  const activeIndex = items.findIndex((it) => (it.href === "/" ? pathname === "/" : pathname.startsWith(it.href)));
 
   return (
     <nav className={s.nav} aria-label="Primary">
+      <span className={s.sheen} aria-hidden="true" />
       <ul className={s.pill}>
+        {activeIndex > -1 && (
+          <span className={s.blob} aria-hidden="true" style={{ left: `calc((100% / 6) * ${activeIndex} + 5px)` }} />
+        )}
         {items.map((it) => {
           const active = it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
           return (
