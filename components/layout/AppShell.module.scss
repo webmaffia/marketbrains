@@ -1,0 +1,24 @@
+@use "tokens" as *;
+
+.frame {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+}
+.app {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  background: var(--bg);
+
+  @include tablet {
+    box-shadow: 0 0 0 0.5px var(--line), 0 0 60px rgba(0, 0, 0, 0.06);
+  }
+}
+.main {
+  min-height: 100dvh;
+  padding-bottom: var(--nav-total);
+  outline: none;
+}

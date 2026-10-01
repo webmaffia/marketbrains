@@ -1,0 +1,35 @@
+@use "tokens" as *;
+
+.card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 148px;
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  scroll-snap-align: start;
+  @include press;
+  @include focus-ring;
+  > :first-child {
+    margin-bottom: 10px;
+  }
+}
+.name {
+  min-height: 2.5em;
+  line-height: 1.25;
+  font-weight: 700;
+  @include truncate(2);
+}
+.sub {
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.stat {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+}

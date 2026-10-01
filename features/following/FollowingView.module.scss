@@ -1,0 +1,54 @@
+@use "tokens" as *;
+
+.panel {
+  padding-top: var(--sp-4);
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+.group {
+  margin: 0 var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  > * + * {
+    border-top: 0.5px solid var(--line);
+  }
+}
+.h {
+  padding: var(--sp-5) var(--sp-4) var(--sp-2);
+  font-size: 18px;
+  font-weight: 700;
+}
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  @include focus-ring;
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.name {
+  font-weight: 680;
+}
+.sub {
+  font-size: 13px;
+  color: var(--text-3);
+  @include truncate;
+}

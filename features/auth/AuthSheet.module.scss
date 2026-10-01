@@ -1,0 +1,56 @@
+@use "tokens" as *;
+
+.reason {
+  margin-bottom: var(--sp-4);
+  color: var(--text-2);
+  text-align: center;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  input {
+    height: 50px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface-2);
+    outline: none;
+    &:focus {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+  }
+}
+.switch {
+  margin-top: var(--sp-4);
+  text-align: center;
+  color: var(--text-2);
+  button {
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 650;
+  }
+}
+.browse {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.note {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}

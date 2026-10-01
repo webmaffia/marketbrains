@@ -1,0 +1,58 @@
+@use "tokens" as *;
+
+.header {
+  position: relative;
+  overflow: hidden;
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+}
+.glow {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 200px;
+  pointer-events: none;
+}
+.top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.id {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  @include truncate;
+}
+.sub {
+  color: var(--text-2);
+  font-size: 14px;
+  @include truncate(2);
+}
+.stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: var(--sp-4) 0 0;
+  padding: var(--sp-3) 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  text-align: center;
+  div + div {
+    border-left: 0.5px solid var(--line);
+  }
+  dt {
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 560;
+  }
+  dd {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 750;
+  }
+}

@@ -1,0 +1,44 @@
+@use "tokens" as *;
+
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
+}
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  @include press;
+  @include focus-ring;
+  border-radius: var(--r-md);
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.name {
+  font-weight: 680;
+  font-size: 16px;
+  @include truncate;
+}
+.meta {
+  font-size: 13px;
+  color: var(--text-3);
+  @include truncate;
+}

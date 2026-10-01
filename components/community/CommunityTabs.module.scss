@@ -1,0 +1,18 @@
+@use "tokens" as *;
+
+.sticky {
+  @include glass(24px);
+  position: sticky;
+  top: calc(var(--safe-top) + var(--topbar-h));
+  z-index: 30;
+  border-width: 0;
+}
+.panel {
+  animation: fade 0.25s ease both;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

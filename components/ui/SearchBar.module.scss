@@ -1,0 +1,42 @@
+@use "tokens" as *;
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-3) 16%, transparent);
+  color: var(--text-3);
+  &:focus-within {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+.placeholder {
+  font-size: 16px;
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--text);
+  outline: none;
+  &::placeholder {
+    color: var(--text-3);
+  }
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+}
+.clear {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--text-3);
+  color: var(--surface);
+}

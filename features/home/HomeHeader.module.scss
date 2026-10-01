@@ -1,0 +1,54 @@
+@use "tokens" as *;
+
+.bar {
+  @include glass(24px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding-top: var(--safe-top);
+  border-width: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--sp-4);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #7b6cff, #4a3de0);
+  color: #fff;
+  font-size: 17px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  @include press;
+  @include focus-ring;
+}
+.primary {
+  background: var(--accent);
+  color: #fff;
+}

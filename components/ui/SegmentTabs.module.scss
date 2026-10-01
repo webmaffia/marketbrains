@@ -1,0 +1,59 @@
+@use "tokens" as *;
+
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+.tab {
+  position: relative;
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--text-3);
+  font-size: 15px;
+  font-weight: 640;
+  white-space: nowrap;
+  transition: color 0.2s;
+  @include focus-ring;
+}
+.underline {
+  padding: 0 var(--sp-2);
+  border-bottom: 0.5px solid var(--line);
+  .tab::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .on {
+    color: var(--text);
+    &::after {
+      transform: scaleX(1);
+    }
+  }
+}
+.pill {
+  gap: 4px;
+  margin: 0 var(--sp-4);
+  padding: 3px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-3) 16%, transparent);
+  .tab {
+    flex: 1;
+    min-height: 38px;
+    border-radius: 11px;
+    padding: 0 12px;
+  }
+  .on {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-1);
+  }
+}

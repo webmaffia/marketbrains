@@ -1,0 +1,62 @@
+@use "tokens" as *;
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 72px;
+  padding: var(--sp-3) var(--sp-4);
+  transition: background-color 0.2s;
+  @include focus-ring;
+  &:active {
+    background: var(--surface-2);
+  }
+}
+.unread {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.lead {
+  position: relative;
+  flex: none;
+}
+.sys {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.type {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.35;
+}
+.time {
+  font-size: 13px;
+  color: var(--text-3);
+}
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}

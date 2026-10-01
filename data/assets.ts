@@ -1,0 +1,14 @@
+import type { Asset } from "@/types";
+
+export const assets: Asset[] = [
+  { id: "reliance", ticker: "RELIANCE", name: "Reliance Industries", exchange: "NSE", region: "india", sector: "Energy & Conglomerates", about: "Diversified conglomerate across energy, retail, telecom and new energy. Members debate capital allocation and the retail and digital arms.", themes: ["Retail expansion", "New energy", "Telecom"] },
+  { id: "tcs", ticker: "TCS", name: "Tata Consultancy Services", exchange: "NSE", region: "india", sector: "IT Services", about: "India's largest IT services company. Members discuss deal wins, attrition, AI's impact on services and capital returns.", themes: ["Deal pipeline", "AI & services", "Dividends"] },
+  { id: "hdfc-bank", ticker: "HDFCBANK", name: "HDFC Bank", exchange: "NSE", region: "india", sector: "Banking", about: "Private-sector banking leader post-merger. Conversation centres on deposit growth, integration and credit quality.", themes: ["Merger integration", "Deposit growth", "Credit quality"] },
+  { id: "infosys", ticker: "INFY", name: "Infosys", exchange: "NSE", region: "india", sector: "IT Services", about: "Global IT services and consulting. Members follow guidance, margins and large-deal momentum.", themes: ["Guidance", "Large deals", "Margins"] },
+  { id: "nvidia", ticker: "NVDA", name: "NVIDIA", exchange: "NASDAQ", region: "us", sector: "Semiconductors", about: "The AI infrastructure conversation. Members debate competition, supply constraints and how durable the demand cycle is.", themes: ["AI infrastructure", "Competition", "Supply chain"] },
+  { id: "apple", ticker: "AAPL", name: "Apple", exchange: "NASDAQ", region: "us", sector: "Consumer Technology", about: "Ecosystem, services and hardware cycles. Members compare long-term moats and product bets.", themes: ["Services growth", "Ecosystem", "Buybacks"] },
+  { id: "tesla", ticker: "TSLA", name: "Tesla", exchange: "NASDAQ", region: "us", sector: "Electric Vehicles", about: "EVs, energy and autonomy. One of the most opinionated communities on the platform.", themes: ["Autonomy", "Energy storage", "Manufacturing"] },
+  { id: "bitcoin", ticker: "BTC", name: "Bitcoin", exchange: "CRYPTO", region: "crypto", sector: "Digital Assets", about: "Store-of-value debates, adoption and the long arc of digital scarcity.", themes: ["Adoption", "Self-custody", "Regulation"] },
+  { id: "ethereum", ticker: "ETH", name: "Ethereum", exchange: "CRYPTO", region: "crypto", sector: "Digital Assets", about: "Smart-contract platform conversations: scaling, staking and the application layer.", themes: ["Scaling", "Staking", "Applications"] },
+  { id: "solana", ticker: "SOL", name: "Solana", exchange: "CRYPTO", region: "crypto", sector: "Digital Assets", about: "High-throughput chain community. Builders and holders trade perspectives on ecosystem growth.", themes: ["Throughput", "Ecosystem", "Developers"] },
+];

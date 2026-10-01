@@ -1,0 +1,15 @@
+import type { User } from "@/types";
+
+export const ME_ID = "u_javed";
+
+export const users: User[] = [
+  { id: "u_javed", username: "javed", name: "Javed Mistari", bio: "Long-term investor. Curious about compounding businesses and the people who run them.", hue: 262, reputation: 1840, tier: "Trusted Contributor", followers: 312, following: 148, contributions: { discussions: 24, comments: 286, helpful: 97 }, communities: ["reliance", "tcs", "bitcoin", "nvidia", "long-term-investing"] },
+  { id: "u_priya", username: "priya.invests", name: "Priya Raman", bio: "Consumer & retail watcher. I read annual reports for fun.", hue: 330, reputation: 4210, tier: "Community Pillar", followers: 2840, following: 190, contributions: { discussions: 61, comments: 903, helpful: 412 }, communities: ["reliance", "hdfc-bank", "dividend-investing"], verified: true },
+  { id: "u_arjun", username: "arjun_k", name: "Arjun Kapoor", bio: "IT services & global capability centres. Ex-analyst.", hue: 200, reputation: 3120, tier: "Community Pillar", followers: 1530, following: 220, contributions: { discussions: 38, comments: 640, helpful: 288 }, communities: ["tcs", "infosys", "it-services"] },
+  { id: "u_meera", username: "meera.s", name: "Meera Shah", bio: "Banking cycles, credit growth and everything in between.", hue: 150, reputation: 2670, tier: "Trusted Contributor", followers: 980, following: 134, contributions: { discussions: 29, comments: 512, helpful: 201 }, communities: ["hdfc-bank", "banking"] },
+  { id: "u_david", username: "david.m", name: "David Moore", bio: "Semis, AI infrastructure, and the occasional contrarian take.", hue: 28, reputation: 3590, tier: "Community Pillar", followers: 2210, following: 305, contributions: { discussions: 47, comments: 771, helpful: 330 }, communities: ["nvidia", "apple", "ai-boom"], verified: true },
+  { id: "u_sofia", username: "sofia_onchain", name: "Sofia Alvarez", bio: "On-chain research. Bitcoin first, everything else second.", hue: 45, reputation: 2480, tier: "Trusted Contributor", followers: 1760, following: 98, contributions: { discussions: 33, comments: 420, helpful: 176 }, communities: ["bitcoin", "ethereum", "solana"] },
+  { id: "u_rahul", username: "rahul.v", name: "Rahul Verma", bio: "First-time investor. Learning in public.", hue: 100, reputation: 410, tier: "Rising Member", followers: 54, following: 260, contributions: { discussions: 6, comments: 88, helpful: 19 }, communities: ["beginners", "tcs"] },
+  { id: "u_kenji", username: "kenji.t", name: "Kenji Tanaka", bio: "EV supply chains and manufacturing economics.", hue: 12, reputation: 1930, tier: "Trusted Contributor", followers: 640, following: 112, contributions: { discussions: 19, comments: 301, helpful: 120 }, communities: ["tesla", "ev"] },
+  { id: "u_ananya", username: "ananya.reads", name: "Ananya Iyer", bio: "Earnings call notes, summarised for humans.", hue: 285, reputation: 2890, tier: "Trusted Contributor", followers: 1190, following: 175, contributions: { discussions: 41, comments: 466, helpful: 230 }, communities: ["earnings-season", "reliance", "infosys"] },
+];

@@ -1,0 +1,144 @@
+@use "tokens" as *;
+
+.card {
+  position: relative;
+  margin: var(--sp-3) var(--sp-4);
+  padding: var(--sp-4) var(--sp-4) var(--sp-1);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  animation: enter 0.35s ease both;
+  &:has(.stretch:focus-visible) {
+    outline: 2px solid var(--accent);
+  }
+}
+.detail {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--sp-3);
+}
+.author {
+  position: relative;
+  z-index: 2;
+  display: flex;
+}
+.who {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 650;
+  font-size: 15px;
+}
+.verified {
+  color: var(--accent);
+}
+.sub {
+  font-size: 13px;
+  color: var(--text-3);
+  @include truncate;
+}
+.comm {
+  position: relative;
+  z-index: 2;
+  color: var(--text-2);
+  font-weight: 560;
+}
+.stance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.bull {
+  background: var(--bull-soft);
+  color: var(--bull);
+}
+.bear {
+  background: var(--bear-soft);
+  color: var(--bear);
+}
+.title {
+  font-size: 18px;
+  line-height: 1.28;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+}
+.stretch {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r-lg);
+  }
+}
+.body {
+  margin-top: 6px;
+  color: var(--text-2);
+  @include truncate(3);
+}
+.bodyFull {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.image {
+  display: grid;
+  place-items: center;
+  height: 168px;
+  margin-top: var(--sp-3);
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface-2));
+  color: var(--accent);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--sp-3);
+}
+.tag {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.foot {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  margin: var(--sp-2) -10px 0;
+}
+.spacer {
+  flex: 1;
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
