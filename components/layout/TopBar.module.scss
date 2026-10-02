@@ -1,13 +1,12 @@
 @use "tokens" as *;
 
 .bar {
-  @include glass(24px);
   position: sticky;
   top: 0;
   z-index: 40;
   padding-top: var(--safe-top);
-  border-width: 0 0 0.5px;
-  border-bottom-color: var(--line);
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--line);
 }
 .row {
   display: grid;

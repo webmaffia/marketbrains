@@ -20,30 +20,30 @@ export function BottomNav({ notificationIds }: { notificationIds: string[] }) {
   const { isLoggedIn, readNotifs } = useStore();
 
   const unread = isLoggedIn ? notificationIds.filter((id) => !readNotifs.includes(id)).length : 0;
-  const activeIndex = items.findIndex((it) => (it.href === "/" ? pathname === "/" : pathname.startsWith(it.href)));
 
   return (
-    <nav className={s.nav} aria-label="Primary">
-      <span className={s.sheen} aria-hidden="true" />
-      <ul className={s.pill}>
-        {activeIndex > -1 && (
-          <span className={s.blob} aria-hidden="true" style={{ left: `calc((100% / 6) * ${activeIndex} + 5px)` }} />
-        )}
-        {items.map((it) => {
-          const active = it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
-          return (
-            <li key={it.href}>
-              <Link href={it.href} className={s.item} aria-current={active ? "page" : undefined}>
-                <span className={s.iconWrap}>
-                  <Icon name={it.icon} size={24} filled={active && it.icon !== "compass" && it.icon !== "users"} />
-                  {it.icon === "bell" && unread > 0 && <span className={s.badge} aria-label={`${unread} unread`}>{unread}</span>}
-                </span>
-                <span className={s.label}>{it.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <>
+      {/* Full-width fade so scrolled content never ends abruptly behind the floating pill. */}
+      <span className={s.backdrop} aria-hidden="true" />
+      <nav className={s.nav} aria-label="Primary">
+        <span className={s.sheen} aria-hidden="true" />
+        <ul className={s.pill}>
+          {items.map((it) => {
+            const active = it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
+            return (
+              <li key={it.href}>
+                <Link href={it.href} className={s.item} aria-current={active ? "page" : undefined}>
+                  <span className={s.iconWrap}>
+                    <Icon name={it.icon} size={22} filled={active && it.icon !== "compass" && it.icon !== "users"} />
+                    {it.icon === "bell" && unread > 0 && <span className={s.badge} aria-label={`${unread} unread`}>{unread}</span>}
+                  </span>
+                  <span className={s.label}>{it.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </>
   );
 }

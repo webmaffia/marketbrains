@@ -16,6 +16,7 @@ export interface User {
   contributions: { discussions: number; comments: number; helpful: number };
   communities: string[];
   verified?: boolean;
+  avatarUrl?: string;
 }
 
 export interface Asset {
@@ -49,6 +50,7 @@ export interface Community {
   discussions: number;
   assetId?: string;
   featured?: boolean;
+  logoUrl?: string;
 }
 
 export interface PollOption {

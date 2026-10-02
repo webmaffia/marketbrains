@@ -38,7 +38,7 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-h: 54px;
-  --nav-total: calc(var(--nav-h) + var(--safe-bottom) + 30px);
+  --nav-total: calc(var(--nav-h) + var(--safe-bottom) + 20px);
   --topbar-h: 48px;
 
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", Roboto, sans-serif;

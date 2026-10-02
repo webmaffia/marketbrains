@@ -1,4 +1,5 @@
 import type { Community, Region } from "@/types";
+import { logoUrl } from "@/lib/logo";
 import { assets } from "./assets";
 import { topics } from "./topics";
 
@@ -15,6 +16,20 @@ const assetStats: Record<string, [members: number, discussions: number, hue: num
   solana: [5300, 1540, 300],
 };
 
+// Real company/asset domains, used to fetch an actual logo instead of a generated initials badge.
+const assetDomains: Record<string, string> = {
+  reliance: "ril.com",
+  tcs: "tcs.com",
+  "hdfc-bank": "hdfcbank.com",
+  infosys: "infosys.com",
+  nvidia: "nvidia.com",
+  apple: "apple.com",
+  tesla: "tesla.com",
+  bitcoin: "bitcoin.org",
+  ethereum: "ethereum.org",
+  solana: "solana.com",
+};
+
 const assetCommunities: Community[] = assets.map((a) => {
   const [members, discussions, hue] = assetStats[a.id];
   return {
@@ -28,17 +43,18 @@ const assetCommunities: Community[] = assets.map((a) => {
     discussions,
     assetId: a.id,
     featured: ["reliance", "nvidia", "bitcoin", "tcs"].includes(a.id),
+    logoUrl: logoUrl(assetDomains[a.id]),
   };
 });
 
-const markets: { slug: string; name: string; region: Region; tagline: string; hue: number; members: number; discussions: number }[] = [
-  { slug: "nse", name: "NSE", region: "india", tagline: "National Stock Exchange conversations.", hue: 255, members: 41200, discussions: 12800 },
-  { slug: "bse", name: "BSE", region: "india", tagline: "Asia's oldest exchange, discussed daily.", hue: 215, members: 22600, discussions: 6900 },
-  { slug: "nyse", name: "NYSE", region: "us", tagline: "Blue chips and big debates.", hue: 190, members: 28400, discussions: 9100 },
-  { slug: "nasdaq", name: "NASDAQ", region: "us", tagline: "Tech, growth and innovation.", hue: 280, members: 36800, discussions: 14200 },
+const markets: { slug: string; name: string; region: Region; tagline: string; hue: number; members: number; discussions: number; domain: string }[] = [
+  { slug: "nse", name: "NSE", region: "india", tagline: "National Stock Exchange conversations.", hue: 255, members: 41200, discussions: 12800, domain: "nseindia.com" },
+  { slug: "bse", name: "BSE", region: "india", tagline: "Asia's oldest exchange, discussed daily.", hue: 215, members: 22600, discussions: 6900, domain: "bseindia.com" },
+  { slug: "nyse", name: "NYSE", region: "us", tagline: "Blue chips and big debates.", hue: 190, members: 28400, discussions: 9100, domain: "nyse.com" },
+  { slug: "nasdaq", name: "NASDAQ", region: "us", tagline: "Tech, growth and innovation.", hue: 280, members: 36800, discussions: 14200, domain: "nasdaq.com" },
 ];
 
-const marketCommunities: Community[] = markets.map((m) => ({ ...m, kind: "market" as const }));
+const marketCommunities: Community[] = markets.map(({ domain, ...m }) => ({ ...m, kind: "market" as const, logoUrl: logoUrl(domain) }));
 
 const topicCommunities: Community[] = topics.map((t, i) => ({
   slug: t.slug,
