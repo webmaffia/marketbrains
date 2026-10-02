@@ -127,7 +127,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
       </header>
 
       <div className={s.scroll}>
-        <PageBanner size="slim" title="Start a thoughtful discussion" text="Ask, explain or challenge. Skip the tips and calls." icon="comment" hue={265} />
+        <PageBanner size="slim" title="Start a thoughtful discussion" text="Ask, explain or challenge. Skip the tips and calls." icon="comment" hue={158} />
         <button type="button" className={s.picker} onClick={() => setSheet("community")}>
           {community ? (
             <>

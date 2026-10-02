@@ -1,22 +1,23 @@
 @use "tokens" as *;
 
 :root {
-  --accent: #8b7dff;
-  --accent-soft: rgba(139, 125, 255, 0.16);
+  --accent: #0b9a66;
+  --accent-soft: rgba(16, 182, 122, 0.14);
   --accent-ink: #ffffff;
-  --brand-grad: linear-gradient(135deg, #8b7dff 0%, #5b4bf5 55%, #3b2fd0 100%);
+  --brand-grad: linear-gradient(135deg, #3fd09a 0%, #12b87a 50%, #0a8f62 100%);
+  --navy: #121f2b;
   --bull: #3ecf8e;
   --bull-soft: rgba(62, 207, 142, 0.16);
   --bear: #ff6b60;
   --bear-soft: rgba(255, 107, 96, 0.16);
 
-  --bg: #f2f0f7;
+  --bg: #eff4f2;
   --surface: #ffffff;
-  --surface-2: #eae7f1;
-  --text: #1d1b24;
-  --text-2: #67647a;
-  --text-3: #86839c;
-  --line: rgba(29, 20, 60, 0.08);
+  --surface-2: #e4ece8;
+  --text: #121f2b;
+  --text-2: #5a6a73;
+  --text-3: #7d8d95;
+  --line: rgba(18, 31, 43, 0.08);
   --glass: rgba(255, 255, 255, 0.46);
   --glass-border: rgba(255, 255, 255, 0.85);
   --glass-shine: rgba(255, 255, 255, 0.95);

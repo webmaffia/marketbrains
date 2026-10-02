@@ -22,7 +22,7 @@ export default async function HomePage() {
             title="Is Tesla valued as a car company or an AI company?"
             text="112 investors are weighing in."
             icon="flame"
-            hue={12}
+            hue={158}
             cta={{ label: "Join the debate", href: "/community/tesla/post/p6" }}
           />
         }

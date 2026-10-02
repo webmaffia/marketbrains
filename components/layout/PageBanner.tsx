@@ -7,7 +7,7 @@ interface Props {
   text?: string;
   eyebrow?: string;
   icon?: IconName;
-  /** Hue (0-360) of the gradient. Defaults to the brand violet. */
+  /** Hue (0-360) of the gradient. Defaults to the brand green. */
   hue?: number;
   cta?: { label: string; href: string };
   /** "hero" is the tall banner; "slim" is a compact strip. */
@@ -15,7 +15,7 @@ interface Props {
 }
 
 /** Gradient banner shown at the top of every page. Server-safe (no state). */
-export function PageBanner({ title, text, eyebrow, icon = "sparkle", hue = 255, cta, size = "hero" }: Props) {
+export function PageBanner({ title, text, eyebrow, icon = "sparkle", hue = 158, cta, size = "hero" }: Props) {
   const style = {
     "--h": hue,
   } as React.CSSProperties;

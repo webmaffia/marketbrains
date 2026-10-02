@@ -23,7 +23,7 @@ export function MyProfile({ user, posts, communities, dir }: Props) {
   if (!isLoggedIn) {
     return (
       <>
-      <PageBanner title="Your investing identity" text="Build reputation through the quality of your contributions." icon="user" hue={270} />
+      <PageBanner title="Your investing identity" text="Build reputation through the quality of your contributions." icon="user" hue={165} />
       <EmptyState
         icon="user"
         title="Your investing identity"
