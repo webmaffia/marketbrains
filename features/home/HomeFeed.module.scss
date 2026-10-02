@@ -1,5 +1,14 @@
 @use "tokens" as *;
 
+// Anchors right under the (also sticky) Home header, so switching feeds never needs a scroll-up first.
+.tabsBar {
+  position: sticky;
+  top: calc(var(--safe-top) + 56px);
+  z-index: 35;
+  padding: var(--sp-2) 0;
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--line);
+}
 .heading {
   padding: var(--sp-3) var(--sp-3) 2px;
   font-size: 13px;

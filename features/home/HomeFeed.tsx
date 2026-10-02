@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { SegmentTabs } from "@/components/ui/SegmentTabs";
@@ -26,7 +26,20 @@ const heading: Record<Tab, string> = {
 
 const engagement = (p: Post) => p.likes + p.comments * 2;
 
-export function HomeFeed({ posts, dir, communities, news }: { posts: Post[]; dir: Directory; communities: Community[]; news: NewsItem[] }) {
+export function HomeFeed({
+  posts,
+  dir,
+  communities,
+  news,
+  banner,
+}: {
+  posts: Post[];
+  dir: Directory;
+  communities: Community[];
+  news: NewsItem[];
+  /** Rendered below the sticky tab bar, above the feed — scrolls away with the rest of the content. */
+  banner: ReactNode;
+}) {
   const [tab, setTab] = useState<Tab>("for-you");
   const { joined, following, isLoggedIn, openAuth, myPosts } = useStore();
 
@@ -61,7 +74,10 @@ export function HomeFeed({ posts, dir, communities, news }: { posts: Post[]; dir
 
   return (
     <>
-      <SegmentTabs tabs={tabs} value={tab} onChange={setTab} label="Feed" idPrefix="feed" />
+      <div className={s.tabsBar}>
+        <SegmentTabs tabs={tabs} value={tab} onChange={setTab} label="Feed" idPrefix="feed" variant="pill" />
+      </div>
+      {tab === "for-you" && banner}
       <div role="tabpanel" aria-labelledby={`feed-${tab}`} key={tab}>
         {combined.length > 0 && <p className={s.heading}>{heading[tab]}</p>}
         {combined.length === 0 ? empty : <MixedFeed items={items} dir={dir} />}

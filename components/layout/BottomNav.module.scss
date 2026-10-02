@@ -1,13 +1,13 @@
 @use "tokens" as *;
 
-// Full-width scrim behind the floating pill: content fades into the page background
-// before it reaches the bottom edge, instead of being hard-cropped by the pill's own width.
+// Full-width scrim behind the floating pill: only fades the strip below/around it, so content
+// stays crisp directly behind the pill itself — that's what the glass blur actually blurs.
 .backdrop {
   position: fixed;
   inset: auto 0 0 0;
   z-index: 49;
-  height: calc(var(--nav-total) + 24px);
-  background: linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);
+  height: calc(var(--safe-bottom) + 26px);
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
   pointer-events: none;
 }
 
