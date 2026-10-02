@@ -1,5 +1,6 @@
 import { PageBanner } from "@/components/layout/PageBanner";
 import { HomeFeed } from "@/features/home/HomeFeed";
+import { WelcomeGate } from "@/features/welcome/welcomeGate";
 import { HomeHeader } from "@/features/home/HomeHeader";
 import { getAllNews, getCommunities, getPosts } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
@@ -8,6 +9,7 @@ export default async function HomePage() {
   const [posts, dir, communities, news] = await Promise.all([getPosts(), getDirectory(), getCommunities(), getAllNews()]);
   return (
     <>
+      <WelcomeGate />
       <HomeHeader />
       <HomeFeed
         posts={posts}

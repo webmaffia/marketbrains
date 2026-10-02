@@ -19,6 +19,8 @@ export function BottomNav({ notificationIds }: { notificationIds: string[] }) {
   const pathname = usePathname();
   const { isLoggedIn, readNotifs } = useStore();
 
+  if (pathname === "/welcome") return null;
+
   const unread = isLoggedIn ? notificationIds.filter((id) => !readNotifs.includes(id)).length : 0;
 
   return (
