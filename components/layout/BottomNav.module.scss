@@ -21,6 +21,8 @@
   z-index: 50;
   transform: translateX(-50%);
   border-radius: var(--r-xl);
+  // The glass mixin's own border is near-invisible on a light surface; give the pill a visible edge.
+  border: 1px solid var(--line);
   overflow: hidden;
   isolation: isolate;
 }
