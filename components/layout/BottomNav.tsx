@@ -19,7 +19,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const { isLoggedIn, unreadCount } = useStore();
 
-  if (pathname === "/welcome") return null;
+  if (pathname === "/welcome" || pathname === "/create") return null;
 
   const unread = isLoggedIn ? unreadCount : 0;
 

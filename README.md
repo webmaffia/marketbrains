@@ -39,10 +39,10 @@ node scripts/gen-icons.mjs   # regenerate placeholder PWA icons
 - Auth is Supabase email + password. A database trigger creates the member's profile on sign-up.
 - Likes, saves, follows, memberships, votes, comments and posts are written to Supabase. Counters (likes, comments, followers, members, poll votes) and notifications are maintained by database triggers, and clients cannot write them directly (row level security + column grants).
 - Creating a discussion or poll goes through the `create_post` RPC and needs a **Pro** member. The "Upgrade to Pro" button calls `upgrade_to_pro()`, a demo stand-in until a payment provider is connected.
+- Discussions can carry one image (JPG/PNG/WebP/GIF, up to 5 MB). Photos are downscaled in the browser, uploaded to the public `post-images` Storage bucket under the member's own folder, and linked through `create_post`.
 - Drafts are kept in `localStorage` on the device.
 
 ## Known gaps
 
-- Image attachments in the composer are a placeholder (no upload yet; needs Supabase Storage).
 - Pro upgrade has no payment step.
 - Seed accounts (Priya, Arjun, ...) are fictional content; delete their rows from `profiles` to remove them and everything they wrote.

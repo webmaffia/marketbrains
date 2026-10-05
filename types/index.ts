@@ -82,6 +82,7 @@ export interface Post {
   comments: number;
   poll?: Poll;
   hasImage?: boolean;
+  imageUrl?: string;
 }
 
 export interface Comment {

@@ -81,6 +81,7 @@ export function mapPost(r: Row): Post {
     likes: r.likes,
     comments: r.comments,
     hasImage: r.has_image || undefined,
+    imageUrl: r.image_url ?? undefined,
     poll: mapPoll(r.id, r.poll),
   };
 }

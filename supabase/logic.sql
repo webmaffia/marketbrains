@@ -178,6 +178,7 @@ create trigger trg_poll_vote before insert on public.poll_votes for each row exe
 
 -- Pro members start discussions. Creates the post (and poll) atomically.
 drop function if exists public.create_post(text, text[], text, text, text, text, boolean, text[]);
+drop function if exists public.create_post(text, text[], text, text, text, text, boolean, text[], text);
 create or replace function public.create_post(
   p_community text,
   p_topics text[],
@@ -187,7 +188,8 @@ create or replace function public.create_post(
   p_body text,
   p_has_image boolean default false,
   p_poll_options text[] default null,
-  p_news_id text default null
+  p_news_id text default null,
+  p_image_url text default null
 ) returns text
 language plpgsql security definer set search_path = public as $$
 declare
@@ -203,6 +205,11 @@ begin
   if me is null then raise exception 'Not signed in'; end if;
   if not exists (select 1 from public.profiles where id = me and plan = 'pro') then
     raise exception 'Starting discussions requires a Pro membership';
+  end if;
+
+  -- Images must be uploads from this member's own folder in the post-images bucket.
+  if nullif(p_image_url, '') is not null and position('/storage/v1/object/public/post-images/' || me || '/' in p_image_url) = 0 then
+    raise exception 'Invalid image';
   end if;
 
   -- A reaction to a news item always lives in that item's community.
@@ -221,9 +228,9 @@ begin
     raise exception 'A poll needs 2 to 4 options';
   end if;
 
-  insert into public.posts (author_id, community_slug, topics, type, stance, title, body, has_image, news_id)
+  insert into public.posts (author_id, community_slug, topics, type, stance, title, body, has_image, news_id, image_url)
   values (me, community, (coalesce(p_topics, '{}'))[1:3], case when p_poll_options is not null then 'poll' else kind end,
-          p_stance, trim(p_title), trim(coalesce(p_body, '')), coalesce(p_has_image, false), p_news_id)
+          p_stance, trim(p_title), trim(coalesce(p_body, '')), coalesce(p_has_image, false) or nullif(p_image_url, '') is not null, p_news_id, nullif(p_image_url, ''))
   returning id into new_id;
 
   if p_poll_options is not null then
@@ -375,7 +382,7 @@ grant insert (post_id, author_id, parent_id, body) on public.comments to authent
 grant delete                                       on public.comments, public.posts to authenticated;
 grant update (read)                                on public.notifications to authenticated;
 
-grant execute on function public.create_post(text, text[], text, text, text, text, boolean, text[], text) to authenticated;
+grant execute on function public.create_post(text, text[], text, text, text, text, boolean, text[], text, text) to authenticated;
 grant execute on function public.add_news(text, text, text, text) to authenticated;
 grant execute on function public.delete_news(text) to authenticated;
 grant execute on function public.is_admin() to authenticated;
@@ -386,3 +393,18 @@ revoke execute on function public.notify(text, text, text, text, text) from publ
 do $$ begin
   alter publication supabase_realtime add table public.notifications;
 exception when duplicate_object then null; when undefined_object then null; end $$;
+
+-- ============================================================
+-- Storage: post images (public read, members write only inside their own folder)
+-- ============================================================
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('post-images', 'post-images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+drop policy if exists "post images upload" on storage.objects;
+drop policy if exists "post images delete" on storage.objects;
+create policy "post images upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "post images delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);

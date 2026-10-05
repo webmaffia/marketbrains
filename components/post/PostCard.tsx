@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useStore } from "@/features/store/StoreProvider";
@@ -24,7 +25,9 @@ interface Props {
 const stanceLabel = { bull: "Bullish view", bear: "Bearish view", neutral: "" } as const;
 
 export function PostCard({ post, dir, hideCommunity, detail }: Props) {
-  const { liked, saved, isLoggedIn, toggleLike, toggleSave, showToast } = useStore();
+  const router = useRouter();
+  const { liked, saved, isLoggedIn, session, toggleLike, toggleSave, deletePost, showToast } = useStore();
+  const isMine = session?.userId === post.authorId;
   const [likes, bumpLikes] = useCountDelta(post.likes);
   const author = dir.users[post.authorId];
   const community = dir.communities[post.communitySlug];
@@ -36,6 +39,13 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
   const onLike = () => {
     if (isLoggedIn) bumpLikes(isLiked ? -1 : 1);
     toggleLike(post.id);
+  };
+
+  const remove = async () => {
+    if (!confirm("Delete this discussion? This can't be undone.")) return;
+    if (!(await deletePost(post.id, post.imageUrl))) return;
+    if (detail) router.replace(`/community/${post.communitySlug}`);
+    else router.refresh();
   };
 
   const share = async () => {
@@ -92,10 +102,15 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
       )}
       <p className={detail ? s.bodyFull : s.body}>{post.body}</p>
 
-      {post.hasImage && (
-        <div className={s.image} role="img" aria-label="Image attachment placeholder">
-          <Icon name="image" size={22} />
-        </div>
+      {post.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- user uploads of arbitrary size; sized by CSS
+        <img src={post.imageUrl} alt={`Image attached to ${post.title}`} className={s.photo} loading="lazy" />
+      ) : (
+        post.hasImage && (
+          <div className={s.image} role="img" aria-label="Image attachment">
+            <Icon name="image" size={22} />
+          </div>
+        )
       )}
       {post.poll && <PollCard postId={post.id} poll={post.poll} />}
 
@@ -124,6 +139,11 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
         <button type="button" className={a.action} onClick={share} aria-label="Share post">
           <Icon name="share" size={18} />
         </button>
+        {isMine && (
+          <button type="button" className={a.action} onClick={remove} aria-label="Delete discussion">
+            <Icon name="trash" size={18} />
+          </button>
+        )}
       </footer>
     </article>
   );

@@ -44,7 +44,8 @@ export interface NewPost {
   stance?: Post["stance"];
   title: string;
   body: string;
-  hasImage?: boolean;
+  /** Public URL of an uploaded image (see PostComposer). */
+  imageUrl?: string;
   pollOptions?: string[];
   /** Set when the post is a reaction to a news item. */
   newsId?: string;
@@ -76,6 +77,8 @@ interface Store extends UserState {
   vote: (postId: string, optionId: string) => void;
   addPost: (p: NewPost) => Promise<string | null>;
   addComment: (postId: string, body: string, parentId?: string) => Promise<Comment | null>;
+  /** Deletes one of the signed-in member's own discussions (and its image). Resolves true on success. */
+  deletePost: (postId: string, imageUrl?: string) => Promise<boolean>;
   markRead: (id: string) => void;
   markAllRead: () => void;
   setDraft: (v: string) => void;
@@ -316,9 +319,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           p_stance: p.stance ?? null,
           p_title: p.title,
           p_body: p.body,
-          p_has_image: !!p.hasImage,
+          p_has_image: !!p.imageUrl,
           p_poll_options: p.pollOptions ?? null,
           p_news_id: p.newsId ?? null,
+          p_image_url: p.imageUrl ?? null,
         });
         if (error) {
           showToast(error.message.includes("Pro") ? "Discussions are for Pro members" : "Couldn't post. Try again.");
@@ -340,6 +344,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return mapComment(data);
       },
 
+      deletePost: async (postId, imageUrl) => {
+        const { data, error } = await supabase.from("posts").delete().eq("id", postId).select("id");
+        if (error || !data?.length) {
+          showToast("Couldn't delete this discussion");
+          return false;
+        }
+        const path = imageUrl?.split("/post-images/")[1];
+        if (path) supabase.storage.from("post-images").remove([decodeURIComponent(path)]).then(() => {});
+        showToast("Discussion deleted");
+        return true;
+      },
       markRead: (id) => {
         const item = state.notifications.find((n) => n.id === id);
         if (!item || item.read) return;

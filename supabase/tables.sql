@@ -166,3 +166,4 @@ alter table public.profiles add column if not exists is_admin boolean not null d
 alter table public.news     add column if not exists url text;
 alter table public.posts    add column if not exists news_id text references public.news (id) on delete set null;
 create index if not exists posts_news_idx on public.posts (news_id) where news_id is not null;
+alter table public.posts    add column if not exists image_url text;

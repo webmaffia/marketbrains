@@ -12,6 +12,8 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CommunityBadge } from "@/components/community/CommunityCard";
 import { useStore } from "@/features/store/StoreProvider";
 import { cx } from "@/lib/format";
+import { IMAGE_ACCEPT, prepareImage, validateImage } from "@/lib/image";
+import { supabase } from "@/lib/supabase";
 import type { Community, NewsItem, Stance, Topic, User } from "@/types";
 import s from "./PostComposer.module.scss";
 
@@ -29,14 +31,15 @@ const MAX_TOPICS = 3;
 
 export function PostComposer({ communities, topics, users, defaultCommunity, news }: Props) {
   const router = useRouter();
-  const { draft, setDraft, addPost, showToast, hydrated } = useStore();
+  const { draft, setDraft, addPost, showToast, hydrated, session } = useStore();
   const [title, setTitle] = useState(news ? `Reaction: ${news.headline}`.slice(0, 140) : "");
   const [body, setBody] = useState("");
   const [slug, setSlug] = useState(defaultCommunity ?? "");
   const [tags, setTags] = useState<string[]>([]);
   const [stance, setStance] = useState<Stance>("neutral");
   const [poll, setPoll] = useState<string[] | null>(null);
-  const [image, setImage] = useState(false);
+  const [image, setImage] = useState<{ file: File; preview: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [query, setQuery] = useState("");
   const [posting, setPosting] = useState(false);
@@ -99,10 +102,42 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
     bodyRef.current?.focus();
   };
 
+  const pickImage = async (file?: File) => {
+    if (!file) return;
+    const problem = validateImage(file);
+    if (problem) return showToast(problem);
+    const ready = await prepareImage(file);
+    if (ready.size > 5 * 1024 * 1024) return showToast("Image must be under 5 MB");
+    setImage((cur) => {
+      if (cur) URL.revokeObjectURL(cur.preview);
+      return { file: ready, preview: URL.createObjectURL(ready) };
+    });
+  };
+
+  const removeImage = () => {
+    if (image) URL.revokeObjectURL(image.preview);
+    setImage(null);
+  };
+
   const publish = async () => {
-    if (!canPost || !community) return;
+    if (!canPost || !community || !session) return;
     const options = poll?.filter((o) => o.trim()) ?? [];
     setPosting(true);
+
+    // Upload first so a failed upload never leaves a half-made post.
+    let imageUrl: string | undefined;
+    if (image) {
+      const t = image.file.type;
+      const ext = t === "image/webp" ? "webp" : t === "image/png" ? "png" : t === "image/gif" ? "gif" : "jpg";
+      const path = `${session.userId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("post-images").upload(path, image.file, { contentType: t, cacheControl: "31536000" });
+      if (error) {
+        setPosting(false);
+        return showToast("Couldn't upload the image. Try again.");
+      }
+      imageUrl = supabase.storage.from("post-images").getPublicUrl(path).data.publicUrl;
+    }
+
     const id = await addPost({
       communitySlug: community.slug,
       topics: tags,
@@ -110,7 +145,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
       stance,
       title: title.trim(),
       body: body.trim(),
-      hasImage: image,
+      imageUrl,
       pollOptions: poll ? options : undefined,
       newsId: news?.id,
     });
@@ -182,10 +217,10 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
         )}
 
         {image && (
-          <div className={s.image}>
-            <Icon name="image" size={28} />
-            <span>Image placeholder</span>
-            <button type="button" onClick={() => setImage(false)} aria-label="Remove image">
+          <div className={s.preview}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
+            <img src={image.preview} alt="Selected image preview" />
+            <button type="button" onClick={removeImage} aria-label="Remove image">
               <Icon name="close" size={16} />
             </button>
           </div>
@@ -247,7 +282,17 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
         <button type="button" onClick={() => setBody((b) => b + (b && !/\s$/.test(b) ? " @" : "@"))} aria-label="Mention someone">
           <Icon name="at" size={22} />
         </button>
-        <button type="button" onClick={() => setImage(true)} aria-label="Add image" aria-pressed={image}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept={IMAGE_ACCEPT}
+          hidden
+          onChange={(e) => {
+            pickImage(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <button type="button" onClick={() => fileRef.current?.click()} aria-label="Add image" aria-pressed={!!image}>
           <Icon name="image" size={22} />
         </button>
         <button type="button" onClick={() => setPoll((p) => p ?? ["", ""])} aria-label="Add poll" aria-pressed={!!poll}>

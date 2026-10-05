@@ -304,3 +304,29 @@
     margin-top: 1px;
   }
 }
+
+.preview {
+  position: relative;
+  margin-bottom: var(--sp-3);
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  img {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+  }
+  button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(18, 31, 43, 0.6);
+    color: #fff;
+  }
+}
