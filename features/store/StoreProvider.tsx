@@ -46,6 +46,8 @@ export interface NewPost {
   body: string;
   hasImage?: boolean;
   pollOptions?: string[];
+  /** Set when the post is a reaction to a news item. */
+  newsId?: string;
 }
 
 interface Store extends UserState {
@@ -316,6 +318,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           p_body: p.body,
           p_has_image: !!p.hasImage,
           p_poll_options: p.pollOptions ?? null,
+          p_news_id: p.newsId ?? null,
         });
         if (error) {
           showToast(error.message.includes("Pro") ? "Discussions are for Pro members" : "Couldn't post. Try again.");

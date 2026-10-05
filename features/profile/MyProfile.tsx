@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageBanner } from "@/components/layout/PageBanner";
 import { Button } from "@/components/ui/Button";
@@ -64,6 +65,13 @@ export function MyProfile({ communities, dir }: Props) {
           <span>Saved posts</span>
           <span className={s.val}>{saved.length}</span>
         </div>
+        {profile.isAdmin && (
+          <Link href="/admin/news" className={s.row}>
+            <Icon name="sparkle" size={20} />
+            <span>Manage news</span>
+            <Icon name="chevron" size={18} />
+          </Link>
+        )}
         {session?.plan !== "pro" && (
           <button type="button" className={s.row} onClick={upgrade}>
             <Icon name="sparkle" size={20} />

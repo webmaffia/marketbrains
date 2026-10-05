@@ -85,6 +85,11 @@ export async function getNews(slug: string): Promise<NewsItem[]> {
   return check(await supabase.from("news").select("*").eq("community_slug", slug).order("created_at", { ascending: false }), "news").map(mapNews);
 }
 
+export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
+  const row = check(await supabase.from("news").select("*").eq("id", id).maybeSingle(), "news");
+  return row ? mapNews(row) : undefined;
+}
+
 export async function getAllNews(): Promise<NewsItem[]> {
   return check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(30), "news").map(mapNews);
 }

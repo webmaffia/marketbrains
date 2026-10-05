@@ -160,3 +160,9 @@ create table if not exists public.notifications (
   created_at timestamptz not null default now()
 );
 create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);
+
+-- Added after first release (safe to re-run)
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+alter table public.news     add column if not exists url text;
+alter table public.posts    add column if not exists news_id text references public.news (id) on delete set null;
+create index if not exists posts_news_idx on public.posts (news_id) where news_id is not null;

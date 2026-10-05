@@ -142,3 +142,21 @@
   @include press;
   @include focus-ring;
 }
+.newsFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  .disc {
+    margin-top: var(--sp-2);
+  }
+}
+.react {
+  margin-top: var(--sp-2);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 650;
+}

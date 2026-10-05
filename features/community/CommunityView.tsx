@@ -36,20 +36,35 @@ export function CommunityView({ community, asset, posts, news, members, dir }: P
     ),
     news: (
       <div className={s.pad}>
-        {news.length > 0 && (
+        {news.length > 0 ? (
           <ul className={s.cards}>
             {news.map((n) => (
               <li key={n.id} className={s.news}>
                 <p className={s.src}>
                   {n.source} · {timeAgo(n.ageMin)}
                 </p>
-                <p className={s.headline}>{n.headline}</p>
-                <p className={s.disc}>
-                  <Icon name="comment" size={15} /> {n.discussionCount} members are discussing this
+                <p className={s.headline}>
+                  {n.url ? (
+                    <a href={n.url} target="_blank" rel="noopener noreferrer">
+                      {n.headline}
+                    </a>
+                  ) : (
+                    n.headline
+                  )}
                 </p>
+                <div className={s.newsFoot}>
+                  <p className={s.disc}>
+                    <Icon name="comment" size={15} /> {n.discussionCount} {n.discussionCount === 1 ? "discussion" : "discussions"}
+                  </p>
+                  <Link href={`/create?community=${community.slug}&news=${n.id}`} className={s.react}>
+                    Discuss
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
+        ) : (
+          <p className={s.none}>No news yet.</p>
         )}
         <h3 className={s.sub}>Community reactions</h3>
         <PostList posts={newsPosts} dir={dir} hideCommunity empty={<p className={s.none}>No reactions yet.</p>} />

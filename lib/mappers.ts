@@ -22,6 +22,7 @@ export function mapUser(r: Row): User {
     verified: r.verified || undefined,
     avatarUrl: r.avatar_url ?? undefined,
     plan: r.plan,
+    isAdmin: r.is_admin || undefined,
   };
 }
 
@@ -99,6 +100,7 @@ export const mapNews = (r: Row): NewsItem => ({
   communitySlug: r.community_slug,
   source: r.source,
   headline: r.headline,
+  url: r.url ?? undefined,
   ageMin: minutesSince(r.created_at),
   discussionCount: r.discussion_count,
 });

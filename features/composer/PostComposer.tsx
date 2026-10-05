@@ -12,7 +12,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CommunityBadge } from "@/components/community/CommunityCard";
 import { useStore } from "@/features/store/StoreProvider";
 import { cx } from "@/lib/format";
-import type { Community, Stance, Topic, User } from "@/types";
+import type { Community, NewsItem, Stance, Topic, User } from "@/types";
 import s from "./PostComposer.module.scss";
 
 interface Props {
@@ -20,15 +20,17 @@ interface Props {
   topics: Topic[];
   users: User[];
   defaultCommunity?: string;
+  /** When set, the post is a reaction to this news item and is filed in its community. */
+  news?: NewsItem;
 }
 
 type Sheet = "community" | "topics" | null;
 const MAX_TOPICS = 3;
 
-export function PostComposer({ communities, topics, users, defaultCommunity }: Props) {
+export function PostComposer({ communities, topics, users, defaultCommunity, news }: Props) {
   const router = useRouter();
   const { draft, setDraft, addPost, showToast, hydrated } = useStore();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(news ? `Reaction: ${news.headline}`.slice(0, 140) : "");
   const [body, setBody] = useState("");
   const [slug, setSlug] = useState(defaultCommunity ?? "");
   const [tags, setTags] = useState<string[]>([]);
@@ -65,7 +67,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
   useEffect(() => {
     if (!hydrated || restored.current) return;
     restored.current = true;
-    if (!draft) return;
+    if (!draft || news) return;
     /* eslint-disable react-hooks/set-state-in-effect -- one-time restore of a persisted draft */
     try {
       const d = JSON.parse(draft);
@@ -78,7 +80,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
       showToast("Draft restored");
     } catch {}
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [hydrated, draft, defaultCommunity, showToast]);
+  }, [hydrated, draft, defaultCommunity, news, showToast]);
 
   const community = communities.find((c) => c.slug === slug);
   const mention = /(?:^|\s)@([\w.]*)$/.exec(body);
@@ -110,6 +112,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
       body: body.trim(),
       hasImage: image,
       pollOptions: poll ? options : undefined,
+      newsId: news?.id,
     });
     setPosting(false);
     if (!id) return;
@@ -132,7 +135,13 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
 
       <div className={s.scroll}>
         <PageBanner size="slim" title="Start a thoughtful discussion" text="Ask, explain or challenge. Skip the tips and calls." icon="comment" hue={158} />
-        <button type="button" className={s.picker} onClick={() => setSheet("community")}>
+        {news && (
+          <p className={s.reacting}>
+            <Icon name="comment" size={16} />
+            <span>Reacting to: {news.headline}</span>
+          </p>
+        )}
+        <button type="button" className={s.picker} onClick={() => !news && setSheet("community")} disabled={!!news}>
           {community ? (
             <>
               <CommunityBadge community={community} size={28} />

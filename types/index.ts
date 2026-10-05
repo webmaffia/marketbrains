@@ -18,6 +18,7 @@ export interface User {
   verified?: boolean;
   avatarUrl?: string;
   plan?: Plan;
+  isAdmin?: boolean;
 }
 
 export interface Asset {
@@ -110,6 +111,8 @@ export interface NewsItem {
   communitySlug: string;
   source: string;
   headline: string;
+  /** Link to the original article, if any. */
+  url?: string;
   ageMin: number;
   discussionCount: number;
 }
