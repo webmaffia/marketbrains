@@ -7,12 +7,14 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { FollowButton } from "@/components/user/FollowButton";
 import { PostList } from "@/components/post/PostList";
 import { timeAgo } from "@/lib/format";
+import type { Quote } from "@/lib/prices";
 import type { Asset, Community, Directory, NewsItem, Post, User } from "@/types";
 import s from "./CommunityView.module.scss";
 
 interface Props {
   community: Community;
   asset?: Asset;
+  quote?: Quote | null;
   posts: Post[];
   news: NewsItem[];
   members: User[];
@@ -20,7 +22,7 @@ interface Props {
 }
 
 /** Server component: assembles tab panels; only the tab switcher and cards are client-side. */
-export function CommunityView({ community, asset, posts, news, members, dir }: Props) {
+export function CommunityView({ community, asset, quote, posts, news, members, dir }: Props) {
   const earnings = posts.filter((p) => p.type === "earnings");
   const newsPosts = posts.filter((p) => p.type === "news");
   const questions = posts.filter((p) => p.type === "question");
@@ -139,7 +141,7 @@ export function CommunityView({ community, asset, posts, news, members, dir }: P
 
   return (
     <>
-      <CommunityHeader community={community} asset={asset} />
+      <CommunityHeader community={community} asset={asset} quote={quote} />
       <CommunityTabs panels={panels} fundamentalsLabel={asset ? "Fundamentals" : "About"} />
       <Link href={`/create?community=${community.slug}`} className={s.fab} aria-label="Start a discussion">
         <Icon name="plus" size={22} />

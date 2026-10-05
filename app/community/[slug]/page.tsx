@@ -4,6 +4,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { CommunityView } from "@/features/community/CommunityView";
 import { getAsset, getCommunity, getNews, getPostsByCommunity, getUsers } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
+import { getQuote } from "@/lib/prices";
 
 export async function generateMetadata({ params }: PageProps<"/community/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -24,8 +25,9 @@ export default async function CommunityPage({ params }: PageProps<"/community/[s
   const { slug } = await params;
   const community = await getCommunity(slug);
   if (!community) notFound();
-  const [asset, posts, news, users, dir] = await Promise.all([
-    getAsset(community.assetId),
+  const asset = await getAsset(community.assetId);
+  const [quote, posts, news, users, dir] = await Promise.all([
+    getQuote(asset),
     getPostsByCommunity(slug),
     getNews(slug),
     getUsers(),
@@ -35,7 +37,7 @@ export default async function CommunityPage({ params }: PageProps<"/community/[s
   return (
     <>
       <TopBar title={community.name} back fallbackHref="/discover" />
-      <CommunityView community={community} asset={asset} posts={posts} news={news} members={members} dir={dir} />
+      <CommunityView community={community} asset={asset} quote={quote} posts={posts} news={news} members={members} dir={dir} />
     </>
   );
 }

@@ -59,3 +59,34 @@
     font-weight: 750;
   }
 }
+
+.price {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-4) var(--sp-4) 0;
+  strong {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+}
+.chg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.up {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.down {
+  background: var(--bear-soft);
+  color: #c8392f;
+}

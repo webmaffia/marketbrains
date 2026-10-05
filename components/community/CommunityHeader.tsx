@@ -1,10 +1,11 @@
-import { compact } from "@/lib/format";
+import { compact, cx } from "@/lib/format";
+import type { Quote } from "@/lib/prices";
 import type { Asset, Community } from "@/types";
 import { FollowButton } from "@/components/user/FollowButton";
 import { CommunityBadge } from "./CommunityCard";
 import s from "./CommunityHeader.module.scss";
 
-export function CommunityHeader({ community, asset }: { community: Community; asset?: Asset }) {
+export function CommunityHeader({ community, asset, quote }: { community: Community; asset?: Asset; quote?: Quote | null }) {
   return (
     <section className={s.header} aria-labelledby="community-name" style={{ "--h": community.hue } as React.CSSProperties}>
       <div className={s.cover} aria-hidden="true" />
@@ -18,6 +19,14 @@ export function CommunityHeader({ community, asset }: { community: Community; as
         </div>
         <FollowButton communitySlug={community.slug} size="md" />
       </div>
+      {quote && (
+        <div className={s.price}>
+          <strong>{new Intl.NumberFormat(quote.currency === "INR" ? "en-IN" : "en-US", { style: "currency", currency: quote.currency, maximumFractionDigits: quote.price < 10 ? 4 : 2 }).format(quote.price)}</strong>
+          <span className={cx(s.chg, quote.changePct >= 0 ? s.up : s.down)}>
+            {quote.changePct >= 0 ? "▲" : "▼"} {Math.abs(quote.changePct).toFixed(2)}%
+          </span>
+        </div>
+      )}
       <dl className={s.stats}>
         <div>
           <dt>Members</dt>
