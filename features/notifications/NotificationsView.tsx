@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NotificationItem } from "@/components/community/NotificationItem";
 import { useStore } from "@/features/store/StoreProvider";
-import type { Notification, User } from "@/types";
+import type { Notification } from "@/types";
 import s from "./NotificationsView.module.scss";
 
-export function NotificationsView({ items, users }: { items: Notification[]; users: Record<string, User> }) {
-  const { isLoggedIn, readNotifs, markRead, markAllRead, openAuth } = useStore();
+export function NotificationsView() {
+  const { isLoggedIn, hydrated, notifications: items, markRead, markAllRead, openAuth } = useStore();
+
+  if (!hydrated) return null;
 
   if (!isLoggedIn) {
     return (
@@ -21,10 +23,8 @@ export function NotificationsView({ items, users }: { items: Notification[]; use
     );
   }
 
-  const isUnread = (n: Notification) => !n.read && !readNotifs.includes(n.id);
-  const unreadIds = items.filter(isUnread).map((n) => n.id);
-  const fresh = items.filter(isUnread);
-  const earlier = items.filter((n) => !isUnread(n));
+  const fresh = items.filter((n) => !n.read);
+  const earlier = items.filter((n) => n.read);
 
   if (!items.length) return <EmptyState icon="bell" title="All quiet" text="When people reply to or follow you, it shows up here." />;
 
@@ -34,7 +34,7 @@ export function NotificationsView({ items, users }: { items: Notification[]; use
         <h2 className={s.h}>{title}</h2>
         <div className={s.group}>
           {list.map((n) => (
-            <NotificationItem key={n.id} item={n} actor={n.actorId ? users[n.actorId] : undefined} unread={isUnread(n)} onOpen={() => markRead(n.id)} />
+            <NotificationItem key={n.id} item={n} actor={n.actor} unread={!n.read} onOpen={() => markRead(n.id)} />
           ))}
         </div>
       </section>
@@ -42,9 +42,9 @@ export function NotificationsView({ items, users }: { items: Notification[]; use
 
   return (
     <>
-      {unreadIds.length > 0 && (
+      {fresh.length > 0 && (
         <div className={s.bar}>
-          <Button variant="secondary" size="sm" onClick={() => markAllRead(unreadIds)}>
+          <Button variant="secondary" size="sm" onClick={markAllRead}>
             Mark all as read
           </Button>
         </div>

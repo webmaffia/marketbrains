@@ -5,6 +5,9 @@ import { RegisterSW } from "@/components/layout/RegisterSW";
 import { StoreProvider } from "@/features/store/StoreProvider";
 import "@/styles/globals.scss";
 
+// Content comes from Supabase and changes constantly, so pages render per request.
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 const description = "A global investor community. Follow assets, discuss ideas, debate perspectives and learn from people you trust.";

@@ -30,7 +30,6 @@ export function CommunityView({ community, asset, posts, news, members, dir }: P
       <PostList
         posts={posts}
         dir={dir}
-        mineCommunity={community.slug}
         hideCommunity
         empty={<EmptyState icon="comment" title="Be the first to speak" text="No discussions here yet. Start one and set the tone." />}
       />

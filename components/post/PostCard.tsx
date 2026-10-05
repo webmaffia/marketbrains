@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useStore } from "@/features/store/StoreProvider";
 import { cx, timeAgo } from "@/lib/format";
+import { useCountDelta } from "@/lib/useCountDelta";
 import type { Directory, Post } from "@/types";
 import { LikeButton } from "./LikeButton";
 import { PollCard } from "./PollCard";
@@ -23,13 +24,19 @@ interface Props {
 const stanceLabel = { bull: "Bullish view", bear: "Bearish view", neutral: "" } as const;
 
 export function PostCard({ post, dir, hideCommunity, detail }: Props) {
-  const { liked, saved, myComments, toggleLike, toggleSave, showToast } = useStore();
+  const { liked, saved, isLoggedIn, toggleLike, toggleSave, showToast } = useStore();
+  const [likes, bumpLikes] = useCountDelta(post.likes);
   const author = dir.users[post.authorId];
   const community = dir.communities[post.communitySlug];
   const isLiked = liked.includes(post.id);
   const isSaved = saved.includes(post.id);
-  const commentCount = post.comments + myComments.filter((c) => c.postId === post.id).length;
+  const commentCount = post.comments;
   const href = `/community/${post.communitySlug}/post/${post.id}`;
+
+  const onLike = () => {
+    if (isLoggedIn) bumpLikes(isLiked ? -1 : 1);
+    toggleLike(post.id);
+  };
 
   const share = async () => {
     const url = `${location.origin}${href}`;
@@ -105,7 +112,7 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
       )}
 
       <footer className={s.foot}>
-        <LikeButton active={isLiked} count={post.likes + (isLiked ? 1 : 0)} onToggle={() => toggleLike(post.id)} />
+        <LikeButton active={isLiked} count={likes} onToggle={onLike} />
         <Link href={href} className={a.action} aria-label={`${commentCount} comments`}>
           <Icon name="comment" size={18} />
           <span>{commentCount}</span>

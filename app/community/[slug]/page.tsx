@@ -2,12 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { CommunityView } from "@/features/community/CommunityView";
-import { getAsset, getCommunities, getCommunity, getNews, getPostsByCommunity, getUsers } from "@/lib/api";
+import { getAsset, getCommunity, getNews, getPostsByCommunity, getUsers } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
-
-export async function generateStaticParams() {
-  return (await getCommunities()).map((c) => ({ slug: c.slug }));
-}
 
 export async function generateMetadata({ params }: PageProps<"/community/[slug]">): Promise<Metadata> {
   const { slug } = await params;

@@ -41,7 +41,7 @@ export function HomeFeed({
   banner: ReactNode;
 }) {
   const [tab, setTab] = useState<Tab>("for-you");
-  const { joined, following, isLoggedIn, openAuth, myPosts } = useStore();
+  const { joined, following, isLoggedIn, openAuth } = useStore();
 
   const list = useMemo(() => {
     switch (tab) {
@@ -61,9 +61,7 @@ export function HomeFeed({
     }
   }, [tab, posts, joined, following, isLoggedIn]);
 
-  const mineAll = tab === "for-you" || tab === "following";
-  const combined = useMemo(() => (mineAll ? [...myPosts, ...list] : list), [mineAll, myPosts, list]);
-  const items = useMemo(() => buildMixedFeed(combined, communities, news), [combined, communities, news]);
+  const items = useMemo(() => buildMixedFeed(list, communities, news), [list, communities, news]);
 
   const empty =
     tab === "following" && !isLoggedIn ? (
@@ -79,8 +77,8 @@ export function HomeFeed({
       </div>
       {tab === "for-you" && banner}
       <div role="tabpanel" aria-labelledby={`feed-${tab}`} key={tab}>
-        {combined.length > 0 && <p className={s.heading}>{heading[tab]}</p>}
-        {combined.length === 0 ? empty : <MixedFeed items={items} dir={dir} />}
+        {list.length > 0 && <p className={s.heading}>{heading[tab]}</p>}
+        {list.length === 0 ? empty : <MixedFeed items={items} dir={dir} />}
       </div>
     </>
   );

@@ -37,6 +37,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
   const [image, setImage] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [query, setQuery] = useState("");
+  const [posting, setPosting] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const restored = useRef(false);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -83,7 +84,7 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
   const mention = /(?:^|\s)@([\w.]*)$/.exec(body);
   const mentionResults = mention ? users.filter((u) => u.username.toLowerCase().startsWith(mention[1].toLowerCase())).slice(0, 4) : [];
   const pollValid = !poll || poll.filter((o) => o.trim()).length >= 2;
-  const canPost = title.trim().length >= 8 && !!community && pollValid;
+  const canPost = title.trim().length >= 8 && !!community && pollValid && !posting;
   const dirty = !!(title || body || poll);
 
   const saveDraft = () => {
@@ -96,10 +97,11 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
     bodyRef.current?.focus();
   };
 
-  const publish = () => {
+  const publish = async () => {
     if (!canPost || !community) return;
     const options = poll?.filter((o) => o.trim()) ?? [];
-    const id = addPost({
+    setPosting(true);
+    const id = await addPost({
       communitySlug: community.slug,
       topics: tags,
       type: poll ? "poll" : "discussion",
@@ -107,8 +109,10 @@ export function PostComposer({ communities, topics, users, defaultCommunity }: P
       title: title.trim(),
       body: body.trim(),
       hasImage: image,
-      poll: poll ? { id: `poll-${Date.now()}`, question: title.trim(), endsInHours: 24, options: options.map((label, i) => ({ id: `o${i}`, label, votes: 0 })) } : undefined,
+      pollOptions: poll ? options : undefined,
     });
+    setPosting(false);
+    if (!id) return;
     showToast("Discussion posted");
     router.replace(`/community/${community.slug}/post/${id}`);
   };

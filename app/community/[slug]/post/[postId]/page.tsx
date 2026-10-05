@@ -4,13 +4,8 @@ import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { CommentThread } from "@/components/post/CommentThread";
 import { PostCard } from "@/components/post/PostCard";
-import { LocalPostView } from "@/features/community/LocalPostView";
-import { getComments, getCommunity, getPost, getPosts } from "@/lib/api";
+import { getComments, getCommunity, getPost } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
-
-export async function generateStaticParams() {
-  return (await getPosts()).map((p) => ({ slug: p.communitySlug, postId: p.id }));
-}
 
 export async function generateMetadata({ params }: PageProps<"/community/[slug]/post/[postId]">): Promise<Metadata> {
   const { slug, postId } = await params;
@@ -28,20 +23,9 @@ export async function generateMetadata({ params }: PageProps<"/community/[slug]/
 export default async function PostPage({ params }: PageProps<"/community/[slug]/post/[postId]">) {
   const { slug, postId } = await params;
   const post = await getPost(postId);
-  const dir = await getDirectory();
+  if (!post) notFound();
 
-  // Posts created locally (id "mine-…") have no server record in the mock data.
-  if (!post) {
-    if (!postId.startsWith("mine-")) notFound();
-    return (
-      <>
-        <TopBar title="Discussion" back fallbackHref={`/community/${slug}`} />
-        <LocalPostView postId={postId} dir={dir} />
-      </>
-    );
-  }
-
-  const [comments, community] = await Promise.all([getComments(postId), getCommunity(slug)]);
+  const [comments, community, dir] = await Promise.all([getComments(postId), getCommunity(slug), getDirectory()]);
   return (
     <>
       <TopBar title="Discussion" back fallbackHref={`/community/${slug}`} />

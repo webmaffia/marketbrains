@@ -17,23 +17,38 @@ interface Props {
 }
 
 export function CommentThread({ postId, comments, dir }: Props) {
-  const { myComments, likedComments, toggleCommentLike, addComment, isLoggedIn, openAuth } = useStore();
+  const { profile, likedComments, toggleCommentLike, addComment, isLoggedIn, openAuth } = useStore();
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  // Comments posted in this session, shown immediately; the server list takes over on the next load.
+  const [added, setAdded] = useState<Comment[]>([]);
+  // Like offsets since the page loaded (server counts already include earlier likes).
+  const [likeDelta, setLikeDelta] = useState<Record<string, number>>({});
+  const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const all = [...comments, ...myComments.filter((c) => c.postId === postId)];
+  const all = [...comments, ...added.filter((a) => !comments.some((c) => c.id === a.id))];
+  const authorOf = (id: string) => dir.users[id] ?? (profile?.id === id ? profile : undefined);
   const top = all.filter((c) => !c.parentId);
   const repliesOf = (id: string) => all.filter((c) => c.parentId === id);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const body = text.trim();
-    if (!body) return;
+    if (!body || sending) return;
+    setSending(true);
     // Replies are flattened to one level: replying to a reply attaches to its parent.
-    addComment(postId, body, replyTo ? (replyTo.parentId ?? replyTo.id) : undefined);
+    const created = await addComment(postId, body, replyTo ? (replyTo.parentId ?? replyTo.id) : undefined);
+    setSending(false);
+    if (!created) return;
+    setAdded((a) => [...a, created]);
     setText("");
     setReplyTo(null);
+  };
+
+  const likeComment = (id: string, liked: boolean) => {
+    if (isLoggedIn) setLikeDelta((d) => ({ ...d, [id]: (d[id] ?? 0) + (liked ? -1 : 1) }));
+    toggleCommentLike(id);
   };
 
   const startReply = (c: Comment) => {
@@ -42,7 +57,8 @@ export function CommentThread({ postId, comments, dir }: Props) {
   };
 
   const renderOne = (c: Comment, isReply = false) => {
-    const author = dir.users[c.authorId];
+    const author = authorOf(c.authorId);
+    if (!author) return null;
     const liked = likedComments.includes(c.id);
     return (
       <li key={c.id} className={cx(s.item, isReply && s.reply)}>
@@ -58,9 +74,9 @@ export function CommentThread({ postId, comments, dir }: Props) {
           </p>
           <p className={s.body}>{c.body}</p>
           <div className={s.actions}>
-            <button type="button" className={cx(s.act, liked && s.liked)} aria-pressed={liked} onClick={() => toggleCommentLike(c.id)}>
+            <button type="button" className={cx(s.act, liked && s.liked)} aria-pressed={liked} onClick={() => likeComment(c.id, liked)}>
               <Icon name="heart" size={16} filled={liked} />
-              {compact(c.likes + (liked ? 1 : 0))}
+              {compact(c.likes + (likeDelta[c.id] ?? 0))}
             </button>
             <button type="button" className={s.act} onClick={() => (isLoggedIn ? startReply(c) : openAuth("Sign in to reply"))}>
               Reply
@@ -90,7 +106,7 @@ export function CommentThread({ postId, comments, dir }: Props) {
       <form className={s.composer} onSubmit={submit}>
         {replyTo && (
           <div className={s.replying}>
-            Replying to {dir.users[replyTo.authorId].name}
+            Replying to {authorOf(replyTo.authorId)?.name ?? "comment"}
             <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply">
               <Icon name="close" size={14} />
             </button>
@@ -107,7 +123,7 @@ export function CommentThread({ postId, comments, dir }: Props) {
               aria-label="Add a comment"
               enterKeyHint="send"
             />
-            <button type="submit" className={s.send} disabled={!text.trim()} aria-label="Post comment">
+            <button type="submit" className={s.send} disabled={!text.trim() || sending} aria-label="Post comment">
               <Icon name="plus" size={20} style={{ transform: "rotate(0deg)" }} />
             </button>
           </div>

@@ -2,12 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { UserProfile } from "@/components/user/UserProfile";
-import { getCommunities, getPostsByUser, getUser, getUsers } from "@/lib/api";
+import { getCommunities, getPostsByUser, getUser } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
-
-export async function generateStaticParams() {
-  return (await getUsers()).map((u) => ({ username: u.username }));
-}
 
 export async function generateMetadata({ params }: PageProps<"/user/[username]">): Promise<Metadata> {
   const { username } = await params;
@@ -28,7 +24,7 @@ export default async function UserPage({ params }: PageProps<"/user/[username]">
   return (
     <>
       <TopBar title={`@${user.username}`} back />
-      <UserProfile user={user} posts={posts} communities={communities.filter((c) => user.communities.includes(c.slug))} dir={dir} isSelf={user.id === "u_javed"} />
+      <UserProfile user={user} posts={posts} communities={communities.filter((c) => user.communities.includes(c.slug))} dir={dir} />
     </>
   );
 }

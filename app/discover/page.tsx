@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { TopBar } from "@/components/layout/TopBar";
 import { DiscoverView } from "@/features/discover/DiscoverView";
-import { assets } from "@/data/assets";
-import { getCommunities } from "@/lib/api";
+import { getAssets, getCommunities } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Discover",
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
-  const communities = await getCommunities();
+  const [communities, assets] = await Promise.all([getCommunities(), getAssets()]);
   return (
     <>
       <TopBar title="Discover" />

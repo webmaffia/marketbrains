@@ -1,41 +1,34 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ME_ID } from "@/data/users";
-import type { Comment, Plan, Post } from "@/types";
+import { mapComment, mapNotification, mapUser, USER_SELECT } from "@/lib/mappers";
+import { supabase } from "@/lib/supabase";
+import type { Comment, Notification, Plan, Post, User } from "@/types";
 
-/** Local mock state. Replace the setters with API mutations when a backend exists. */
-interface Persisted {
-  session: { userId: string; plan: Plan } | null;
+/** Everything that belongs to the signed-in user. Loaded from Supabase after sign-in. */
+interface UserState {
+  profile: User | null;
   liked: string[];
   likedComments: string[];
   saved: string[];
   following: string[];
   joined: string[];
   votes: Record<string, string>;
-  myPosts: Post[];
-  myComments: Comment[];
-  readNotifs: string[];
-  draft: string;
+  notifications: Notification[];
 }
 
-const EMPTY: Persisted = {
-  session: null,
+const EMPTY: UserState = {
+  profile: null,
   liked: [],
   likedComments: [],
   saved: [],
   following: [],
   joined: [],
   votes: {},
-  myPosts: [],
-  myComments: [],
-  readNotifs: [],
-  draft: "",
+  notifications: [],
 };
 
-const KEY = "mb-state-v1";
-const SEED_FOLLOWING = ["u_priya", "u_arjun", "u_david", "u_sofia"];
-const SEED_JOINED = ["reliance", "tcs", "bitcoin", "nvidia", "long-term-investing"];
+const DRAFT_KEY = "mb-draft-v1";
 
 export type AuthMode = "login" | "signup";
 interface AuthSheetState {
@@ -44,15 +37,31 @@ interface AuthSheetState {
   reason?: string;
 }
 
-interface Store extends Persisted {
+export interface NewPost {
+  communitySlug: string;
+  topics: string[];
+  type: Post["type"];
+  stance?: Post["stance"];
+  title: string;
+  body: string;
+  hasImage?: boolean;
+  pollOptions?: string[];
+}
+
+interface Store extends UserState {
   hydrated: boolean;
   isLoggedIn: boolean;
+  session: { userId: string; plan: Plan } | null;
+  unreadCount: number;
+  draft: string;
   auth: AuthSheetState;
   toast: string | null;
   openAuth: (reason?: string, mode?: AuthMode) => void;
   closeAuth: () => void;
   setAuthMode: (m: AuthMode) => void;
-  login: (name?: string) => void;
+  /** Resolve to an error message, or null on success. */
+  signIn: (email: string, password: string) => Promise<string | null>;
+  signUp: (name: string, email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
   logout: () => void;
   upgrade: () => void;
   /** Runs fn if signed in, otherwise opens the auth sheet with a reason. */
@@ -63,10 +72,10 @@ interface Store extends Persisted {
   toggleFollow: (userId: string) => void;
   toggleJoin: (slug: string) => void;
   vote: (postId: string, optionId: string) => void;
-  addPost: (p: Omit<Post, "id" | "authorId" | "ageMin" | "likes" | "comments">) => string;
-  addComment: (postId: string, body: string, parentId?: string) => void;
+  addPost: (p: NewPost) => Promise<string | null>;
+  addComment: (postId: string, body: string, parentId?: string) => Promise<Comment | null>;
   markRead: (id: string) => void;
-  markAllRead: (ids: string[]) => void;
+  markAllRead: () => void;
   setDraft: (v: string) => void;
   showToast: (m: string) => void;
 }
@@ -81,32 +90,42 @@ export function useStore(): Store {
 
 const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
+const NOTIF_SELECT = "*, actor:profiles!actor_id(*)";
+
+async function loadUserState(userId: string): Promise<UserState> {
+  const [profile, likes, cLikes, saves, follows, members, votes, notifs] = await Promise.all([
+    supabase.from("profiles").select(USER_SELECT).eq("id", userId).maybeSingle(),
+    supabase.from("post_likes").select("post_id").eq("user_id", userId),
+    supabase.from("comment_likes").select("comment_id").eq("user_id", userId),
+    supabase.from("saves").select("post_id").eq("user_id", userId),
+    supabase.from("follows").select("followee_id").eq("follower_id", userId),
+    supabase.from("community_members").select("community_slug").eq("user_id", userId),
+    supabase.from("poll_votes").select("post_id, option_id").eq("user_id", userId),
+    supabase.from("notifications").select(NOTIF_SELECT).eq("user_id", userId).order("created_at", { ascending: false }).limit(60),
+  ]);
+  return {
+    profile: profile.data ? mapUser(profile.data) : null,
+    liked: (likes.data ?? []).map((r) => r.post_id),
+    likedComments: (cLikes.data ?? []).map((r) => r.comment_id),
+    saved: (saves.data ?? []).map((r) => r.post_id),
+    following: (follows.data ?? []).map((r) => r.followee_id),
+    joined: (members.data ?? []).map((r) => r.community_slug),
+    votes: Object.fromEntries((votes.data ?? []).map((r) => [r.post_id, r.option_id])),
+    notifications: (notifs.data ?? []).map(mapNotification),
+  };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<Persisted>(EMPTY);
-  const [hydrated, setHydrated] = useState(false);
+  const [state, setState] = useState<UserState>(EMPTY);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [draft, setDraftState] = useState("");
   const [auth, setAuth] = useState<AuthSheetState>({ open: false, mode: "login" });
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Hydrate from localStorage after mount so server and first client render match.
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setState({ ...EMPTY, ...JSON.parse(raw) });
-    } catch {}
-    setHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {}
-  }, [state, hydrated]);
-
-  const patch = useCallback((p: Partial<Persisted> | ((s: Persisted) => Partial<Persisted>)) => {
+  const patch = useCallback((p: Partial<UserState> | ((s: UserState) => Partial<UserState>)) => {
     setState((s) => ({ ...s, ...(typeof p === "function" ? p(s) : p) }));
   }, []);
 
@@ -116,72 +135,223 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
+  // Drafts stay on the device; everything else lives in Supabase.
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    try {
+      setDraftState(localStorage.getItem(DRAFT_KEY) ?? "");
+    } catch {}
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  // Follow the Supabase auth session. The callback only records the user id; data loads in the effect below.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+      setAuthChecked(true);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  // Load (or clear) the user's data whenever the signed-in user changes.
+  useEffect(() => {
+    if (!authChecked) return;
+    let cancelled = false;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!userId) {
+      setState(EMPTY);
+      setLoaded(true);
+      return;
+    }
+    setLoaded(false);
+    loadUserState(userId).then((s) => {
+      if (cancelled) return;
+      setState(s);
+      setLoaded(true);
+    });
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    // New notifications arrive live.
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, async () => {
+        const { data } = await supabase.from("notifications").select(NOTIF_SELECT).eq("user_id", userId).order("created_at", { ascending: false }).limit(60);
+        if (!cancelled && data) patch({ notifications: data.map(mapNotification) });
+      })
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [userId, authChecked, patch]);
+
   const value = useMemo<Store>(() => {
-    const isLoggedIn = !!state.session;
+    const hydrated = authChecked && loaded;
+    const isLoggedIn = !!userId;
+    const session = userId ? { userId, plan: (state.profile?.plan ?? "free") as Plan } : null;
     const guard: Store["guard"] = (reason, fn) => {
       if (isLoggedIn) fn();
       else setAuth({ open: true, mode: "login", reason });
     };
+
+    /** Applies the change now, writes it to Supabase, and rolls back with a toast if the write fails. */
+    const optimistic = (apply: () => void, revert: () => void, write: PromiseLike<{ error: { message: string } | null }>, failure = "Something went wrong. Try again.") => {
+      apply();
+      write.then(({ error }) => {
+        if (error) {
+          revert();
+          showToast(failure);
+        }
+      });
+    };
+
+    /** Toggle membership of `id` in a list backed by a join table. */
+    const toggleRow = (
+      key: "liked" | "likedComments" | "saved" | "following" | "joined",
+      id: string,
+      table: string,
+      row: Record<string, string>,
+      del: Record<string, string>,
+    ) => {
+      const was = state[key].includes(id);
+      const flip = () => patch((s) => ({ [key]: toggle(s[key], id) }) as Partial<UserState>);
+      optimistic(
+        flip,
+        flip,
+        was
+          ? Object.entries(del).reduce((q, [k, v]) => q.eq(k, v), supabase.from(table).delete())
+          : supabase.from(table).insert(row),
+      );
+      return was;
+    };
+
+    const me = userId ?? "";
+    const setDraft = (v: string) => {
+      setDraftState(v);
+      try {
+        if (v) localStorage.setItem(DRAFT_KEY, v);
+        else localStorage.removeItem(DRAFT_KEY);
+      } catch {}
+    };
+
     return {
       ...state,
       hydrated,
       isLoggedIn,
+      session,
+      unreadCount: state.notifications.filter((n) => !n.read).length,
+      draft,
       auth,
       toast,
       showToast,
+      guard,
       openAuth: (reason, mode = "login") => setAuth({ open: true, mode, reason }),
       closeAuth: () => setAuth((a) => ({ ...a, open: false })),
       setAuthMode: (mode) => setAuth((a) => ({ ...a, mode })),
-      login: () => {
-        patch((s) => ({
-          session: { userId: ME_ID, plan: s.session?.plan ?? "free" },
-          following: s.following.length ? s.following : SEED_FOLLOWING,
-          joined: s.joined.length ? s.joined : SEED_JOINED,
-        }));
+
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return error.message;
         setAuth((a) => ({ ...a, open: false }));
-        showToast("Welcome back, Javed");
+        showToast("Welcome back");
+        return null;
+      },
+      signUp: async (name, email, password) => {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+        if (error) return { error: error.message, needsConfirmation: false };
+        // No session means the project requires email confirmation before first sign-in.
+        if (!data.session) return { error: null, needsConfirmation: true };
+        setAuth((a) => ({ ...a, open: false }));
+        showToast(`Welcome, ${name}`);
+        return { error: null, needsConfirmation: false };
       },
       logout: () => {
-        patch({ session: null });
-        showToast("Signed out");
+        supabase.auth.signOut().then(() => showToast("Signed out"));
       },
       upgrade: () => {
-        patch((s) => (s.session ? { session: { ...s.session, plan: "pro" } } : {}));
-        showToast("You're now a Pro member");
+        supabase.rpc("upgrade_to_pro").then(({ error }) => {
+          if (error) return showToast("Couldn't upgrade. Try again.");
+          patch((s) => (s.profile ? { profile: { ...s.profile, plan: "pro" } } : {}));
+          showToast("You're now a Pro member");
+        });
       },
-      guard,
-      toggleLike: (id) => guard("Sign in to like posts", () => patch((s) => ({ liked: toggle(s.liked, id) }))),
-      toggleCommentLike: (id) => guard("Sign in to like comments", () => patch((s) => ({ likedComments: toggle(s.likedComments, id) }))),
+
+      toggleLike: (id) => guard("Sign in to like posts", () => void toggleRow("liked", id, "post_likes", { user_id: me, post_id: id }, { user_id: me, post_id: id })),
+      toggleCommentLike: (id) =>
+        guard("Sign in to like comments", () => void toggleRow("likedComments", id, "comment_likes", { user_id: me, comment_id: id }, { user_id: me, comment_id: id })),
       toggleSave: (id) =>
         guard("Sign in to save posts", () => {
-          const was = state.saved.includes(id);
-          patch((s) => ({ saved: toggle(s.saved, id) }));
+          const was = toggleRow("saved", id, "saves", { user_id: me, post_id: id }, { user_id: me, post_id: id });
           showToast(was ? "Removed from saved" : "Saved");
         }),
-      toggleFollow: (id) => guard("Sign in to follow people", () => patch((s) => ({ following: toggle(s.following, id) }))),
+      toggleFollow: (id) =>
+        guard("Sign in to follow people", () => {
+          if (id === me) return;
+          toggleRow("following", id, "follows", { follower_id: me, followee_id: id }, { follower_id: me, followee_id: id });
+        }),
       toggleJoin: (slug) =>
         guard("Sign in to join communities", () => {
-          const was = state.joined.includes(slug);
-          patch((s) => ({ joined: toggle(s.joined, slug) }));
+          const was = toggleRow("joined", slug, "community_members", { user_id: me, community_slug: slug }, { user_id: me, community_slug: slug });
           showToast(was ? "Left community" : "Joined community");
         }),
-      vote: (postId, optionId) => guard("Sign in to vote", () => patch((s) => (s.votes[postId] ? {} : { votes: { ...s.votes, [postId]: optionId } }))),
-      addPost: (p) => {
-        const id = `mine-${Date.now()}`;
-        patch((s) => ({ myPosts: [{ ...p, id, authorId: ME_ID, ageMin: 0, likes: 0, comments: 0 }, ...s.myPosts], draft: "" }));
-        return id;
+      vote: (postId, optionId) =>
+        guard("Sign in to vote", () => {
+          if (state.votes[postId]) return;
+          optimistic(
+            () => patch((s) => ({ votes: { ...s.votes, [postId]: optionId } })),
+            () =>
+              patch((s) => ({ votes: Object.fromEntries(Object.entries(s.votes).filter(([id]) => id !== postId)) })),
+            supabase.from("poll_votes").insert({ user_id: me, post_id: postId, option_id: optionId }),
+            "Couldn't record your vote. The poll may have ended.",
+          );
+        }),
+
+      addPost: async (p) => {
+        const { data, error } = await supabase.rpc("create_post", {
+          p_community: p.communitySlug,
+          p_topics: p.topics,
+          p_type: p.type,
+          p_stance: p.stance ?? null,
+          p_title: p.title,
+          p_body: p.body,
+          p_has_image: !!p.hasImage,
+          p_poll_options: p.pollOptions ?? null,
+        });
+        if (error) {
+          showToast(error.message.includes("Pro") ? "Discussions are for Pro members" : "Couldn't post. Try again.");
+          return null;
+        }
+        setDraft("");
+        return data as string;
       },
-      addComment: (postId, body, parentId) =>
-        guard("Sign in to comment", () =>
-          patch((s) => ({
-            myComments: [...s.myComments, { id: `mc-${Date.now()}`, postId, authorId: ME_ID, parentId, body, ageMin: 0, likes: 0 }],
-          })),
-        ),
-      markRead: (id) => patch((s) => ({ readNotifs: s.readNotifs.includes(id) ? s.readNotifs : [...s.readNotifs, id] })),
-      markAllRead: (ids) => patch((s) => ({ readNotifs: Array.from(new Set([...s.readNotifs, ...ids])) })),
-      setDraft: (draft) => patch({ draft }),
+      addComment: async (postId, body, parentId) => {
+        if (!isLoggedIn) {
+          setAuth({ open: true, mode: "login", reason: "Sign in to comment" });
+          return null;
+        }
+        const { data, error } = await supabase.from("comments").insert({ post_id: postId, author_id: me, parent_id: parentId ?? null, body }).select().single();
+        if (error || !data) {
+          showToast("Couldn't post your comment");
+          return null;
+        }
+        return mapComment(data);
+      },
+
+      markRead: (id) => {
+        const item = state.notifications.find((n) => n.id === id);
+        if (!item || item.read) return;
+        patch((s) => ({ notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)) }));
+        supabase.from("notifications").update({ read: true }).eq("id", id).then(() => {});
+      },
+      markAllRead: () => {
+        const ids = state.notifications.filter((n) => !n.read).map((n) => n.id);
+        if (!ids.length) return;
+        patch((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) }));
+        supabase.from("notifications").update({ read: true }).in("id", ids).then(() => {});
+      },
+      setDraft,
     };
-  }, [state, hydrated, auth, toast, patch, showToast]);
+  }, [state, userId, authChecked, loaded, draft, auth, toast, patch, showToast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

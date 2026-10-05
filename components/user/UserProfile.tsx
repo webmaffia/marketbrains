@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CommunityBadge } from "@/components/community/CommunityCard";
 import { Icon } from "@/components/ui/Icon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useState } from "react";
 import { PostList } from "@/components/post/PostList";
 import { useStore } from "@/features/store/StoreProvider";
 import { compact } from "@/lib/format";
@@ -19,11 +20,15 @@ interface Props {
   isSelf?: boolean;
 }
 
-export function UserProfile({ user, posts, communities, dir, isSelf }: Props) {
-  const { isLoggedIn, following, joined, session } = useStore();
+export function UserProfile({ user, posts, communities, dir, isSelf: selfProp }: Props) {
+  const { isLoggedIn, hydrated, following, joined, session } = useStore();
+  const isSelf = selfProp ?? session?.userId === user.id;
+  // Server counts include follows made before the page loaded; offset by what changes afterwards.
+  const [wasFollowing, setWasFollowing] = useState<boolean | null>(null);
+  if (hydrated && wasFollowing === null) setWasFollowing(following.includes(user.id));
   // Quality signals lead; follower count is deliberately secondary.
   const c = user.contributions;
-  const followers = user.followers + (!isSelf && following.includes(user.id) ? 1 : 0);
+  const followers = user.followers + (wasFollowing === null ? 0 : Number(following.includes(user.id)) - Number(wasFollowing));
   const myCommunities = isSelf && isLoggedIn ? communities.filter((x) => joined.includes(x.slug)) : communities;
 
   return (
@@ -40,7 +45,7 @@ export function UserProfile({ user, posts, communities, dir, isSelf }: Props) {
         <div className={s.rep}>
           <Icon name="sparkle" size={16} />
           <strong>{compact(user.reputation)}</strong> reputation · {user.tier}
-          {isSelf && session?.plan === "pro" && <span className={s.pro}>PRO</span>}
+          {isSelf && (session?.plan === "pro") && <span className={s.pro}>PRO</span>}
         </div>
         {!isSelf && (
           <div className={s.cta}>
@@ -90,7 +95,6 @@ export function UserProfile({ user, posts, communities, dir, isSelf }: Props) {
         <PostList
           posts={posts}
           dir={dir}
-          mineAll={isSelf}
           empty={<p className={s.none}>No discussions yet.</p>}
         />
       </section>

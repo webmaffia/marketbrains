@@ -15,13 +15,13 @@ const items: { href: string; label: string; icon: IconName }[] = [
   { href: "/profile", label: "Profile", icon: "user" },
 ];
 
-export function BottomNav({ notificationIds }: { notificationIds: string[] }) {
+export function BottomNav() {
   const pathname = usePathname();
-  const { isLoggedIn, readNotifs } = useStore();
+  const { isLoggedIn, unreadCount } = useStore();
 
   if (pathname === "/welcome") return null;
 
-  const unread = isLoggedIn ? notificationIds.filter((id) => !readNotifs.includes(id)).length : 0;
+  const unread = isLoggedIn ? unreadCount : 0;
 
   return (
     <>

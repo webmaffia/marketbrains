@@ -1,24 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PageBanner } from "@/components/layout/PageBanner";
-
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { UserProfile } from "@/components/user/UserProfile";
 import { useStore } from "@/features/store/StoreProvider";
-import type { Community, Directory, Post, User } from "@/types";
+import { getPostsByUser } from "@/lib/api";
+import type { Community, Directory, Post } from "@/types";
 import s from "./MyProfile.module.scss";
 
 interface Props {
-  user: User;
-  posts: Post[];
   communities: Community[];
   dir: Directory;
 }
 
-export function MyProfile({ user, posts, communities, dir }: Props) {
-  const { isLoggedIn, session, openAuth, logout, upgrade, saved } = useStore();
+export function MyProfile({ communities, dir }: Props) {
+  const { isLoggedIn, hydrated, profile, session, openAuth, logout, upgrade, saved } = useStore();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const userId = session?.userId;
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    getPostsByUser(userId).then((p) => !cancelled && setPosts(p));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  if (!hydrated) return null;
 
   if (!isLoggedIn) {
     return (
@@ -41,9 +53,11 @@ export function MyProfile({ user, posts, communities, dir }: Props) {
     );
   }
 
+  if (!profile) return null;
+
   return (
     <>
-      <UserProfile user={user} posts={posts} communities={communities} dir={dir} isSelf />
+      <UserProfile user={profile} posts={posts} communities={communities} dir={dir} isSelf />
       <div className={s.menu}>
         <div className={s.row}>
           <Icon name="bookmark" size={20} />

@@ -1,0 +1,162 @@
+-- ============================================================
+-- Tables
+-- ============================================================
+
+create table if not exists public.profiles (
+  id          text primary key,            -- auth.users.id::text for real accounts, slug-style ids for seed accounts
+  username    text not null unique,
+  name        text not null,
+  bio         text not null default '',
+  hue         int  not null default 160,
+  reputation  int  not null default 0,
+  tier        text not null default 'Rising Member',
+  followers   int  not null default 0,
+  following   int  not null default 0,
+  discussions int  not null default 0,
+  comments    int  not null default 0,
+  helpful     int  not null default 0,
+  verified    boolean not null default false,
+  avatar_url  text,
+  plan        text not null default 'free' check (plan in ('free', 'pro')),
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.assets (
+  id       text primary key,
+  ticker   text not null,
+  name     text not null,
+  exchange text not null,
+  region   text not null,
+  sector   text not null,
+  about    text not null,
+  themes   text[] not null default '{}'
+);
+
+create table if not exists public.topics (
+  slug        text primary key,
+  name        text not null,
+  kind        text not null,
+  description text not null
+);
+
+create table if not exists public.communities (
+  slug        text primary key,
+  name        text not null,
+  kind        text not null,
+  region      text not null,
+  tagline     text not null,
+  hue         int  not null default 160,
+  members     int  not null default 0,
+  discussions int  not null default 0,
+  asset_id    text references public.assets (id),
+  featured    boolean not null default false,
+  logo_url    text
+);
+
+create table if not exists public.community_members (
+  user_id        text not null references public.profiles (id) on delete cascade,
+  community_slug text not null references public.communities (slug) on delete cascade,
+  created_at     timestamptz not null default now(),
+  primary key (user_id, community_slug)
+);
+
+create table if not exists public.posts (
+  id             text primary key default gen_random_uuid()::text,
+  author_id      text not null references public.profiles (id) on delete cascade,
+  community_slug text not null references public.communities (slug) on delete cascade,
+  topics         text[] not null default '{}',
+  type           text not null default 'discussion' check (type in ('opinion','question','discussion','news','earnings','poll')),
+  stance         text check (stance in ('bull','bear','neutral')),
+  title          text not null check (char_length(title) between 8 and 140),
+  body           text not null default '' check (char_length(body) <= 10000),
+  has_image      boolean not null default false,
+  likes          int not null default 0,
+  comments       int not null default 0,
+  created_at     timestamptz not null default now()
+);
+create index if not exists posts_created_idx   on public.posts (created_at desc);
+create index if not exists posts_community_idx on public.posts (community_slug, created_at desc);
+create index if not exists posts_author_idx    on public.posts (author_id, created_at desc);
+
+create table if not exists public.polls (
+  post_id  text primary key references public.posts (id) on delete cascade,
+  question text not null,
+  ends_at  timestamptz
+);
+
+create table if not exists public.poll_options (
+  post_id  text not null references public.polls (post_id) on delete cascade,
+  id       text not null,
+  label    text not null,
+  votes    int  not null default 0,
+  position int  not null default 0,
+  primary key (post_id, id)
+);
+
+create table if not exists public.poll_votes (
+  user_id   text not null references public.profiles (id) on delete cascade,
+  post_id   text not null,
+  option_id text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, post_id),
+  foreign key (post_id, option_id) references public.poll_options (post_id, id) on delete cascade
+);
+
+create table if not exists public.comments (
+  id         text primary key default gen_random_uuid()::text,
+  post_id    text not null references public.posts (id) on delete cascade,
+  author_id  text not null references public.profiles (id) on delete cascade,
+  parent_id  text references public.comments (id) on delete cascade,
+  body       text not null check (char_length(body) between 1 and 5000),
+  likes      int not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists comments_post_idx on public.comments (post_id, created_at);
+
+create table if not exists public.post_likes (
+  user_id text not null references public.profiles (id) on delete cascade,
+  post_id text not null references public.posts (id) on delete cascade,
+  primary key (user_id, post_id)
+);
+
+create table if not exists public.comment_likes (
+  user_id    text not null references public.profiles (id) on delete cascade,
+  comment_id text not null references public.comments (id) on delete cascade,
+  primary key (user_id, comment_id)
+);
+
+create table if not exists public.saves (
+  user_id text not null references public.profiles (id) on delete cascade,
+  post_id text not null references public.posts (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, post_id)
+);
+
+create table if not exists public.follows (
+  follower_id text not null references public.profiles (id) on delete cascade,
+  followee_id text not null references public.profiles (id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (follower_id, followee_id),
+  check (follower_id <> followee_id)
+);
+
+create table if not exists public.news (
+  id               text primary key,
+  community_slug   text not null references public.communities (slug) on delete cascade,
+  source           text not null,
+  headline         text not null,
+  discussion_count int not null default 0,
+  created_at       timestamptz not null default now()
+);
+
+create table if not exists public.notifications (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    text not null references public.profiles (id) on delete cascade,
+  actor_id   text references public.profiles (id) on delete cascade,
+  type       text not null check (type in ('like','comment','reply','follow','mention','community')),
+  text       text not null,
+  href       text not null,
+  read       boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);

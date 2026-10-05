@@ -17,6 +17,7 @@ export interface User {
   communities: string[];
   verified?: boolean;
   avatarUrl?: string;
+  plan?: Plan;
 }
 
 export interface Asset {
@@ -62,7 +63,8 @@ export interface Poll {
   id: string;
   question: string;
   options: PollOption[];
-  endsInHours: number;
+  /** Hours until voting closes. Undefined means the poll never closes. */
+  endsInHours?: number;
 }
 
 export interface Post {
@@ -96,6 +98,7 @@ export interface Notification {
   id: string;
   type: NotificationType;
   actorId?: string;
+  actor?: User;
   text: string;
   href: string;
   ageMin: number;
