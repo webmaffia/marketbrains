@@ -1,0 +1,126 @@
+@use "tokens" as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-2);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  > span {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  em {
+    font-style: normal;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+  .warn {
+    color: var(--danger);
+  }
+  input,
+  textarea {
+    width: 100%;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface-2);
+    color: var(--text);
+    outline: none;
+    &:focus {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+  }
+  input {
+    height: 50px;
+  }
+  textarea {
+    padding: 12px 16px;
+    resize: none;
+    line-height: 1.4;
+  }
+}
+.h {
+  margin-top: var(--sp-3);
+  font-size: 16px;
+  font-weight: 700;
+}
+.hint {
+  margin-top: -6px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.withVis {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vis {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  button {
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .on {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+}
+.locked {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  p {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  strong {
+    display: block;
+    color: var(--text);
+    font-size: 15px;
+  }
+  small {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-3);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+}
+.bar {
+  height: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand-grad);
+  }
+}
+.error {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bear-soft);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}

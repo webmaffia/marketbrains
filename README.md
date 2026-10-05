@@ -52,6 +52,16 @@ node scripts/gen-icons.mjs   # regenerate placeholder PWA icons
 - Members can set or remove their profile photo (camera button on their own profile). It is cropped to a square in the browser, stored in the public `avatars` bucket under their own folder, and the database only accepts avatar URLs that point at that folder.
 - Drafts are kept in `localStorage` on the device.
 
+- **Theme:** follows the device (light/dark) by default; members can force Light or Dark in Profile > Appearance. The choice is saved on the device.
+- **Content rules:** buy/sell calls, price targets/entry/stop-loss levels and abusive language are rejected. The rules live in `lib/contentFilter.ts`; `npm run db:build` copies them into the database function `content_violation()`, which enforces them for posts, poll options and comments (the browser check only gives instant feedback). It is a pattern filter, so treat it as a strong first line, not a guarantee.
+- **Disclaimer:** every post carries "Opinion of the author, not investment advice."
+- **Terms:** signing up needs the Terms & Conditions checkbox; the acceptance time is stored on the profile. `/terms` and `/privacy` are drafts that should be reviewed by a lawyer before launch.
+- **Profile:** bio, contact email and mobile number (private by default; the member can make each public), and social links (unlocked after 5 discussions). Contact details live in a separate table that only the owner can read; `public_contact()` returns only fields marked public.
+- **Not interested:** posts from muted people are hidden in feeds, polls, communities and search. The list, with undo, is at Profile > Not interested.
+- **Leaderboard:** `/leaderboard` ranks by useful contributions (substance, likes and comments earned, with per-post caps), weekly / monthly / all-time. The scoring is the `leaderboard()` SQL function; the rules are explained on the page.
+- **Community page:** a sentiment meter (members' one-tap views plus the stance on recent discussions), live polls, top contributors and trending discussions above the discussion list.
+- **Push badge:** installed PWAs also show the unread count on the app icon (Badging API). Check push setup with `GET /api/push` and header `x-push-secret`.
+
 ## Known gaps
 
 - Pro upgrade has no payment step.

@@ -1,0 +1,33 @@
+@use "tokens" as *;
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 52px;
+  padding: 0 var(--sp-4);
+  font-weight: 560;
+  span:nth-child(2) {
+    flex: 1;
+  }
+}
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  button {
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 650;
+    @include focus-ring;
+  }
+  .on {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+}

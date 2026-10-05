@@ -94,6 +94,20 @@ const paths: Record<string, ReactNode> = {
       <path d="m4 7 8 6 8-6" />
     </>
   ),
+  trophy: (
+    <>
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" />
+      <path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
+    </>
+  ),
+  block: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </>
+  ),
+  phone: <path d="M6.5 3h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4.5 5a2 2 0 0 1 2-2z" />,
+  edit: <path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" />,
 };
 
 export type IconName = keyof typeof paths;

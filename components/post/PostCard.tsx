@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Icon } from "@/components/ui/Icon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useStore } from "@/features/store/StoreProvider";
 import { cx, timeAgo } from "@/lib/format";
 import { useCountDelta } from "@/lib/useCountDelta";
 import type { Directory, Post } from "@/types";
+import { Disclaimer } from "@/components/legal/Disclaimer";
 import { LikeButton } from "./LikeButton";
 import { PollCard } from "./PollCard";
 import a from "./Actions.module.scss";
@@ -26,7 +29,8 @@ const stanceLabel = { bull: "Bullish view", bear: "Bearish view", neutral: "" } 
 
 export function PostCard({ post, dir, hideCommunity, detail }: Props) {
   const router = useRouter();
-  const { liked, saved, isLoggedIn, session, toggleLike, toggleSave, deletePost, showToast } = useStore();
+  const { liked, saved, isLoggedIn, session, toggleLike, toggleSave, toggleMute, deletePost, showToast } = useStore();
+  const [menu, setMenu] = useState(false);
   const isMine = session?.userId === post.authorId;
   const [likes, bumpLikes] = useCountDelta(post.likes);
   const author = dir.users[post.authorId];
@@ -41,7 +45,14 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
     toggleLike(post.id);
   };
 
+  const notInterested = () => {
+    setMenu(false);
+    toggleMute(post.authorId, author.name);
+    if (detail) router.replace("/");
+  };
+
   const remove = async () => {
+    setMenu(false);
     if (!confirm("Delete this discussion? This can't be undone.")) return;
     if (!(await deletePost(post.id, post.imageUrl))) return;
     if (detail) router.replace(`/community/${post.communitySlug}`);
@@ -126,6 +137,8 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
         </ul>
       )}
 
+      <Disclaimer />
+
       <footer className={s.foot}>
         <LikeButton active={isLiked} count={likes} onToggle={onLike} />
         <Link href={href} className={a.action} aria-label={`${commentCount} comments`}>
@@ -139,12 +152,37 @@ export function PostCard({ post, dir, hideCommunity, detail }: Props) {
         <button type="button" className={a.action} onClick={share} aria-label="Share post">
           <Icon name="share" size={18} />
         </button>
-        {isMine && (
-          <button type="button" className={a.action} onClick={remove} aria-label="Delete discussion">
-            <Icon name="trash" size={18} />
-          </button>
-        )}
+        <button type="button" className={a.action} onClick={() => setMenu(true)} aria-label="More options">
+          <Icon name="more" size={18} />
+        </button>
       </footer>
+
+      <BottomSheet open={menu} onClose={() => setMenu(false)} title="Options">
+        <ul className={s.menu}>
+          {!isMine && (
+            <li>
+              <button type="button" onClick={notInterested}>
+                <Icon name="close" size={20} />
+                <span>
+                  <strong>Not interested</strong>
+                  <small>See fewer posts from {author.name}</small>
+                </span>
+              </button>
+            </li>
+          )}
+          {isMine && (
+            <li>
+              <button type="button" className={s.danger} onClick={remove}>
+                <Icon name="trash" size={20} />
+                <span>
+                  <strong>Delete discussion</strong>
+                  <small>Removes it and its comments for good</small>
+                </span>
+              </button>
+            </li>
+          )}
+        </ul>
+      </BottomSheet>
     </article>
   );
 }

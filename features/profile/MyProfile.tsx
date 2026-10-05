@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { UserProfile } from "@/components/user/UserProfile";
 import { useStore } from "@/features/store/StoreProvider";
+import { ThemeToggle } from "./ThemeToggle";
 import { PushToggle } from "@/features/notifications/PushToggle";
 import { getPostsByUser } from "@/lib/api";
 import type { Community, Directory, Post } from "@/types";
@@ -19,7 +20,7 @@ interface Props {
 }
 
 export function MyProfile({ communities, dir }: Props) {
-  const { isLoggedIn, hydrated, profile, session, openAuth, logout, upgrade, saved } = useStore();
+  const { isLoggedIn, hydrated, profile, session, openAuth, logout, upgrade, saved, muted } = useStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const userId = session?.userId;
 
@@ -51,6 +52,9 @@ export function MyProfile({ communities, dir }: Props) {
           </div>
         }
       />
+      <div className={s.menu}>
+        <ThemeToggle />
+      </div>
       </>
     );
   }
@@ -66,7 +70,18 @@ export function MyProfile({ communities, dir }: Props) {
           <span>Saved posts</span>
           <span className={s.val}>{saved.length}</span>
         </div>
+        <Link href="/leaderboard" className={s.row}>
+          <Icon name="trophy" size={20} />
+          <span>Leaderboard</span>
+          <Icon name="chevron" size={18} />
+        </Link>
+        <Link href="/profile/not-interested" className={s.row}>
+          <Icon name="block" size={20} />
+          <span>Not interested</span>
+          <span className={s.val}>{muted.length}</span>
+        </Link>
         <PushToggle />
+        <ThemeToggle />
         {profile.isAdmin && (
           <Link href="/admin/news" className={s.row}>
             <Icon name="sparkle" size={20} />

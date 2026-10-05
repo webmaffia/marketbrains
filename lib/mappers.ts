@@ -23,6 +23,7 @@ export function mapUser(r: Row): User {
     avatarUrl: r.avatar_url ?? undefined,
     plan: r.plan,
     isAdmin: r.is_admin || undefined,
+    socialLinks: r.social_links && Object.keys(r.social_links).length ? r.social_links : undefined,
   };
 }
 

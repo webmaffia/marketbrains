@@ -41,25 +41,27 @@ export function HomeFeed({
   banner: ReactNode;
 }) {
   const [tab, setTab] = useState<Tab>("for-you");
-  const { joined, following, isLoggedIn, openAuth } = useStore();
+  const { joined, following, muted, isLoggedIn, openAuth } = useStore();
+
+  const visible = useMemo(() => posts.filter((p) => !muted.includes(p.authorId)), [posts, muted]);
 
   const list = useMemo(() => {
     switch (tab) {
       case "trending":
         // Recent + engaged: engagement decayed by age.
-        return [...posts].sort((a, b) => engagement(b) / (1 + b.ageMin / 240) - engagement(a) / (1 + a.ageMin / 240));
+        return [...visible].sort((a, b) => engagement(b) / (1 + b.ageMin / 240) - engagement(a) / (1 + a.ageMin / 240));
       case "popular":
-        return [...posts].sort((a, b) => engagement(b) - engagement(a));
+        return [...visible].sort((a, b) => engagement(b) - engagement(a));
       case "following":
-        return posts.filter((p) => following.includes(p.authorId) || joined.includes(p.communitySlug));
+        return visible.filter((p) => following.includes(p.authorId) || joined.includes(p.communitySlug));
       default: {
-        if (!isLoggedIn) return posts;
+        if (!isLoggedIn) return visible;
         // Boost posts from joined communities / followed people, keep recency otherwise.
         const score = (p: Post) => (joined.includes(p.communitySlug) ? 2 : 0) + (following.includes(p.authorId) ? 2 : 0);
-        return [...posts].sort((a, b) => score(b) - score(a) || a.ageMin - b.ageMin);
+        return [...visible].sort((a, b) => score(b) - score(a) || a.ageMin - b.ageMin);
       }
     }
-  }, [tab, posts, joined, following, isLoggedIn]);
+  }, [tab, visible, joined, following, isLoggedIn]);
 
   const items = useMemo(() => buildMixedFeed(list, communities, news), [list, communities, news]);
 

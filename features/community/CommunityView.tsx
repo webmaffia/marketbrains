@@ -8,13 +8,16 @@ import { FollowButton } from "@/components/user/FollowButton";
 import { PostList } from "@/components/post/PostList";
 import { timeAgo } from "@/lib/format";
 import type { Quote } from "@/lib/prices";
-import type { Asset, Community, Directory, NewsItem, Post, User } from "@/types";
+import type { Asset, Community, Directory, LeaderboardEntry, NewsItem, Post, SentimentCounts, User } from "@/types";
+import { CommunityOverview } from "./CommunityOverview";
 import s from "./CommunityView.module.scss";
 
 interface Props {
   community: Community;
   asset?: Asset;
   quote?: Quote | null;
+  sentiment: SentimentCounts;
+  leaders: LeaderboardEntry[];
   posts: Post[];
   news: NewsItem[];
   members: User[];
@@ -22,19 +25,22 @@ interface Props {
 }
 
 /** Server component: assembles tab panels; only the tab switcher and cards are client-side. */
-export function CommunityView({ community, asset, quote, posts, news, members, dir }: Props) {
+export function CommunityView({ community, asset, quote, sentiment, leaders, posts, news, members, dir }: Props) {
   const earnings = posts.filter((p) => p.type === "earnings");
   const newsPosts = posts.filter((p) => p.type === "news");
   const questions = posts.filter((p) => p.type === "question");
 
   const panels = {
     discussions: (
-      <PostList
-        posts={posts}
-        dir={dir}
-        hideCommunity
-        empty={<EmptyState icon="comment" title="Be the first to speak" text="No discussions here yet. Start one and set the tone." />}
-      />
+      <>
+        <CommunityOverview community={community} posts={posts} sentiment={sentiment} leaders={leaders} />
+        <PostList
+          posts={posts}
+          dir={dir}
+          hideCommunity
+          empty={<EmptyState icon="comment" title="Be the first to speak" text="No discussions here yet. Start one and set the tone." />}
+        />
+      </>
     ),
     news: (
       <div className={s.pad}>

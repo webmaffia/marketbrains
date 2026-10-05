@@ -17,7 +17,7 @@ import s from "./FollowingView.module.scss";
 type Tab = "communities" | "people";
 
 export function FollowingView({ communities, users }: { communities: Community[]; users: User[] }) {
-  const { isLoggedIn, hydrated, session, joined, following, openAuth } = useStore();
+  const { isLoggedIn, hydrated, session, joined, following, muted, openAuth } = useStore();
   const [tab, setTab] = useState<Tab>("communities");
 
   if (!hydrated) return null;
@@ -45,7 +45,7 @@ export function FollowingView({ communities, users }: { communities: Community[]
 
   const myCommunities = communities.filter((c) => joined.includes(c.slug));
   const myPeople = users.filter((u) => following.includes(u.id));
-  const suggested = users.filter((u) => !following.includes(u.id) && u.id !== session?.userId).slice(0, 3);
+  const suggested = users.filter((u) => !following.includes(u.id) && !muted.includes(u.id) && u.id !== session?.userId).slice(0, 3);
 
   return (
     <>

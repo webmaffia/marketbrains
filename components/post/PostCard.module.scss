@@ -163,3 +163,29 @@
     transform: translateY(6px);
   }
 }
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  button {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    min-height: 56px;
+    padding: 6px 4px;
+    text-align: left;
+    strong {
+      display: block;
+      font-weight: 650;
+    }
+    small {
+      display: block;
+      color: var(--text-3);
+      font-size: 13px;
+    }
+  }
+}
+.danger {
+  color: var(--danger);
+}

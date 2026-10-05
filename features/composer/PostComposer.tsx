@@ -12,6 +12,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CommunityBadge } from "@/components/community/CommunityCard";
 import { useStore } from "@/features/store/StoreProvider";
 import { cx } from "@/lib/format";
+import { checkContent } from "@/lib/contentFilter";
 import { IMAGE_ACCEPT, prepareImage, validateImage } from "@/lib/image";
 import { supabase } from "@/lib/supabase";
 import type { Community, NewsItem, Stance, Topic, User } from "@/types";
@@ -89,7 +90,8 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
   const mention = /(?:^|\s)@([\w.]*)$/.exec(body);
   const mentionResults = mention ? users.filter((u) => u.username.toLowerCase().startsWith(mention[1].toLowerCase())).slice(0, 4) : [];
   const pollValid = !poll || poll.filter((o) => o.trim()).length >= 2;
-  const canPost = title.trim().length >= 8 && !!community && pollValid && !posting;
+  const violation = checkContent(title, body, ...(poll ?? []));
+  const canPost = title.trim().length >= 8 && !!community && pollValid && !posting && !violation;
   const dirty = !!(title || body || poll);
 
   const saveDraft = () => {
@@ -200,6 +202,12 @@ export function PostComposer({ communities, topics, users, defaultCommunity, new
           Details
         </label>
         <textarea ref={bodyRef} id="c-body" className={s.body} placeholder="Share your perspective, ask a question, or start a debate… Use @ to mention someone." value={body} onChange={(e) => setBody(e.target.value)} />
+
+        {violation && (
+          <p className={s.violation} role="alert">
+            {violation.message}
+          </p>
+        )}
 
         {mentionResults.length > 0 && (
           <ul className={s.mentions} role="listbox" aria-label="Mention suggestions">

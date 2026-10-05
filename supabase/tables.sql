@@ -177,3 +177,37 @@ create table if not exists public.push_subscriptions (
   created_at timestamptz not null default now()
 );
 create index if not exists push_subscriptions_user_idx on public.push_subscriptions (user_id);
+
+-- Profile details, privacy, not-interested and community sentiment
+alter table public.profiles add column if not exists social_links jsonb not null default '{}';
+alter table public.profiles add column if not exists terms_accepted_at timestamptz;
+alter table public.profiles drop constraint if exists profiles_bio_len;
+alter table public.profiles add constraint profiles_bio_len check (char_length(bio) <= 280);
+
+-- Private contact details. Only the owner can read this table; others see a field only if it was made public (see public_contact()).
+create table if not exists public.profile_contacts (
+  user_id      text primary key references public.profiles (id) on delete cascade,
+  email        text,
+  phone        text,
+  email_public boolean not null default false,
+  phone_public boolean not null default false,
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists public.muted_users (
+  user_id    text not null references public.profiles (id) on delete cascade,
+  muted_id   text not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, muted_id),
+  check (user_id <> muted_id)
+);
+
+create table if not exists public.sentiment_votes (
+  user_id        text not null references public.profiles (id) on delete cascade,
+  community_slug text not null references public.communities (slug) on delete cascade,
+  stance         text not null check (stance in ('bull', 'bear', 'neutral')),
+  updated_at     timestamptz not null default now(),
+  primary key (user_id, community_slug)
+);
+create index if not exists sentiment_votes_community_idx on public.sentiment_votes (community_slug);
+

@@ -330,3 +330,14 @@
     color: #fff;
   }
 }
+
+.violation {
+  margin: 0 0 var(--sp-3);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bear-soft);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}

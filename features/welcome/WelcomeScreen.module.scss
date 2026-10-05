@@ -10,7 +10,7 @@
   min-height: 100dvh;
   margin-bottom: calc(-1 * var(--nav-total)); // cancels the shell's nav padding (no nav here)
   padding: calc(var(--safe-top) + 56px) var(--sp-6) calc(var(--safe-bottom) + var(--sp-6));
-  background: #fbfaff;
+  background: var(--bg);
 }
 .glow {
   position: absolute;
@@ -50,7 +50,7 @@
   max-width: 360px;
   font-size: 16px;
   line-height: 1.55;
-  color: #5b6573;
+  color: var(--text-2);
 }
 .points {
   display: flex;
@@ -73,7 +73,7 @@
   small {
     display: block;
     font-size: 13px;
-    color: #6b7686;
+    color: var(--text-3);
   }
 }
 .ico {
@@ -116,6 +116,6 @@
 }
 .skip {
   min-height: 44px !important;
-  color: #6b7686;
+  color: var(--text-3);
   font-weight: 600 !important;
 }

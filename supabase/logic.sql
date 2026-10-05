@@ -26,8 +26,9 @@ begin
     candidate := handle || n::text;
   end loop;
 
-  insert into public.profiles (id, username, name, hue)
-  values (new.id::text, candidate, left(base_name, 60), (abs(hashtext(new.id::text)) % 360));
+  insert into public.profiles (id, username, name, hue, terms_accepted_at)
+  values (new.id::text, candidate, left(base_name, 60), (abs(hashtext(new.id::text)) % 360),
+          case when new.raw_user_meta_data ->> 'terms_accepted_at' is not null then now() end);
   return new;
 end $$;
 
@@ -287,6 +288,143 @@ begin
   on conflict (endpoint) do update set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth;
 end $$;
 
+-- Content rules (content_violation() is generated from lib/contentFilter.ts by scripts/build-sql.ts)
+create or replace function public.guard_content() returns trigger
+language plpgsql as $$
+declare v text;
+begin
+  if tg_table_name = 'posts' then v := public.content_violation(new.title || E'\n' || new.body);
+  elsif tg_table_name = 'comments' then v := public.content_violation(new.body);
+  elsif tg_table_name = 'poll_options' then v := public.content_violation(new.label);
+  end if;
+  if v is not null then raise exception 'CONTENT_BLOCKED:%', v; end if;
+  return new;
+end $$;
+drop trigger if exists trg_guard_posts on public.posts;
+create trigger trg_guard_posts before insert on public.posts for each row execute function public.guard_content();
+drop trigger if exists trg_guard_comments on public.comments;
+create trigger trg_guard_comments before insert on public.comments for each row execute function public.guard_content();
+drop trigger if exists trg_guard_options on public.poll_options;
+create trigger trg_guard_options before insert on public.poll_options for each row execute function public.guard_content();
+
+-- Profile editing: name, bio, private/public contact details, social links (unlocked after 5 discussions).
+create or replace function public.save_profile(
+  p_name text, p_bio text, p_email text, p_phone text,
+  p_email_public boolean, p_phone_public boolean, p_social jsonb
+) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  me         text := auth.uid()::text;
+  v          text;
+  k          text;
+  val        text;
+  host       text;
+  clean      jsonb := '{}';
+  posts_n    int;
+  phone_c    text;
+  email_c    text;
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  p_name := trim(coalesce(p_name, ''));
+  p_bio  := trim(coalesce(p_bio, ''));
+  if char_length(p_name) < 2 or char_length(p_name) > 60 then raise exception 'Name must be 2 to 60 characters'; end if;
+  if char_length(p_bio) > 280 then raise exception 'Bio can be up to 280 characters'; end if;
+  v := public.content_violation(p_name || E'\n' || p_bio);
+  if v is not null then raise exception 'CONTENT_BLOCKED:%', v; end if;
+
+  email_c := nullif(trim(coalesce(p_email, '')), '');
+  if email_c is not null and email_c !~* '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$' then raise exception 'Enter a valid email address'; end if;
+  phone_c := nullif(regexp_replace(coalesce(p_phone, ''), '[\s().-]', '', 'g'), '');
+  if phone_c is not null and phone_c !~ '^\+?[0-9]{7,15}$' then raise exception 'Enter a valid mobile number, digits with an optional country code'; end if;
+
+  if p_social is not null and jsonb_typeof(p_social) = 'object' then
+    for k, val in select key, value from jsonb_each_text(p_social) loop
+      val := trim(coalesce(val, ''));
+      continue when val = '';
+      if k not in ('x', 'linkedin', 'youtube', 'instagram', 'telegram', 'website') then raise exception 'Unknown link type'; end if;
+      if char_length(val) > 200 or val !~* '^https://[^\s/]+(/\S*)?$' then raise exception 'Links must start with https://'; end if;
+      host := regexp_replace(lower(substring(val from '^https://([^/\s:?#]+)')), '^www\.', '');
+      if (k = 'x' and host not in ('x.com', 'twitter.com'))
+         or (k = 'linkedin' and not (host = 'linkedin.com' or host like '%.linkedin.com'))
+         or (k = 'youtube' and host not in ('youtube.com', 'm.youtube.com', 'youtu.be'))
+         or (k = 'instagram' and not (host = 'instagram.com' or host like '%.instagram.com'))
+         or (k = 'telegram' and host not in ('t.me', 'telegram.me')) then
+        raise exception 'That link does not look like a % link', k;
+      end if;
+      clean := clean || jsonb_build_object(k, val);
+    end loop;
+  end if;
+
+  select discussions into posts_n from public.profiles where id = me;
+  if clean <> '{}'::jsonb and clean is distinct from (select social_links from public.profiles where id = me) and coalesce(posts_n, 0) < 5 then
+    raise exception 'SOCIAL_LOCKED';
+  end if;
+
+  update public.profiles set name = p_name, bio = p_bio, social_links = clean where id = me;
+  insert into public.profile_contacts (user_id, email, phone, email_public, phone_public, updated_at)
+  values (me, email_c, phone_c, coalesce(p_email_public, false) and email_c is not null, coalesce(p_phone_public, false) and phone_c is not null, now())
+  on conflict (user_id) do update set email = excluded.email, phone = excluded.phone,
+    email_public = excluded.email_public, phone_public = excluded.phone_public, updated_at = now();
+end $$;
+
+-- What anyone may see of a member's contact details: only fields they chose to make public.
+create or replace function public.public_contact(p_user text) returns table (email text, phone text)
+language sql stable security definer set search_path = public as $$
+  select case when email_public then email end, case when phone_public then phone end
+  from public.profile_contacts where user_id = p_user and (email_public or phone_public)
+$$;
+
+-- Community sentiment: one view per member per community, changeable any time.
+create or replace function public.set_sentiment(p_slug text, p_stance text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Not signed in'; end if;
+  if p_stance not in ('bull', 'bear', 'neutral') then raise exception 'Invalid view'; end if;
+  if not exists (select 1 from public.communities where slug = p_slug) then raise exception 'Unknown community'; end if;
+  insert into public.sentiment_votes (user_id, community_slug, stance) values (auth.uid()::text, p_slug, p_stance)
+  on conflict (user_id, community_slug) do update set stance = excluded.stance, updated_at = now();
+end $$;
+
+create or replace function public.sentiment_counts(p_slug text) returns table (bull int, bear int, neutral int)
+language sql stable security definer set search_path = public as $$
+  select count(*) filter (where stance = 'bull')::int, count(*) filter (where stance = 'bear')::int, count(*) filter (where stance = 'neutral')::int
+  from public.sentiment_votes where community_slug = p_slug
+$$;
+
+-- Leaderboard: rewards useful writing, not volume.
+--   post:    +5 if it has real substance (40+ characters), else +1; plus 2 per like and 3 per comment it earns (capped at 60 per post so one viral post can't dominate)
+--   comment: +1 if it has substance (20+ characters); plus 2 per like (capped at 20)
+create or replace function public.leaderboard(p_period text default 'week', p_community text default null, p_limit int default 50)
+returns table (user_id text, username text, name text, avatar_url text, hue int, verified boolean, score int, posts int, comments int, likes int)
+language sql stable security definer set search_path = public as $$
+  with win as (
+    select case p_period when 'week' then now() - interval '7 days' when 'month' then now() - interval '30 days' else '-infinity'::timestamptz end as since
+  ),
+  p as (
+    select author_id, count(*)::int n, sum(likes)::int l,
+           sum(case when char_length(body) >= 40 then 5 else 1 end + least(2 * likes + 3 * comments, 60))::int pts
+    from public.posts, win
+    where created_at >= win.since and (p_community is null or community_slug = p_community)
+    group by author_id
+  ),
+  c as (
+    select cm.author_id, count(*)::int n, sum(cm.likes)::int l,
+           sum(case when char_length(cm.body) >= 20 then 1 else 0 end + least(2 * cm.likes, 20))::int pts
+    from public.comments cm join public.posts po on po.id = cm.post_id, win
+    where cm.created_at >= win.since and (p_community is null or po.community_slug = p_community)
+    group by cm.author_id
+  )
+  select pr.id, pr.username, pr.name, pr.avatar_url, pr.hue, pr.verified,
+         (coalesce(p.pts, 0) + coalesce(c.pts, 0))::int,
+         coalesce(p.n, 0), coalesce(c.n, 0), coalesce(p.l, 0) + coalesce(c.l, 0)
+  from public.profiles pr
+  left join p on p.author_id = pr.id
+  left join c on c.author_id = pr.id
+  where coalesce(p.n, 0) + coalesce(c.n, 0) > 0
+  order by 7 desc, pr.reputation desc, pr.name
+  limit least(greatest(p_limit, 1), 100)
+$$;
+
 -- Demo upgrade: there is no payment provider wired up yet. Replace the body with a
 -- webhook-driven update (service role) before charging real money.
 create or replace function public.upgrade_to_pro() returns void
@@ -317,6 +455,9 @@ alter table public.follows           enable row level security;
 alter table public.news              enable row level security;
 alter table public.notifications     enable row level security;
 alter table public.push_subscriptions enable row level security;
+alter table public.profile_contacts  enable row level security;
+alter table public.muted_users       enable row level security;
+alter table public.sentiment_votes   enable row level security;
 
 -- Public read
 do $$
@@ -384,6 +525,19 @@ drop policy if exists "own delete" on public.push_subscriptions;
 create policy "own read"   on public.push_subscriptions for select using (user_id = public.uid());
 create policy "own delete" on public.push_subscriptions for delete using (user_id = public.uid());
 
+drop policy if exists "own read" on public.profile_contacts;
+create policy "own read" on public.profile_contacts for select using (user_id = public.uid());
+
+drop policy if exists "own read"   on public.muted_users;
+drop policy if exists "own insert" on public.muted_users;
+drop policy if exists "own delete" on public.muted_users;
+create policy "own read"   on public.muted_users for select using (user_id = public.uid());
+create policy "own insert" on public.muted_users for insert with check (user_id = public.uid());
+create policy "own delete" on public.muted_users for delete using (user_id = public.uid());
+
+drop policy if exists "own read" on public.sentiment_votes;
+create policy "own read" on public.sentiment_votes for select using (user_id = public.uid());
+
 drop policy if exists "own update" on public.profiles;
 create policy "own update" on public.profiles for update using (id = public.uid()) with check (id = public.uid());
 
@@ -391,7 +545,7 @@ create policy "own update" on public.profiles for update using (id = public.uid(
 revoke all on all tables in schema public from anon, authenticated;
 grant select on all tables in schema public to anon, authenticated;
 
-grant update (name, bio, avatar_url)               on public.profiles to authenticated;
+grant update (avatar_url)                          on public.profiles to authenticated;
 grant insert, delete                               on public.post_likes, public.comment_likes, public.saves, public.follows, public.community_members to authenticated;
 grant insert (post_id, option_id, user_id)         on public.poll_votes to authenticated;
 grant insert (post_id, author_id, parent_id, body) on public.comments to authenticated;
@@ -403,6 +557,12 @@ grant execute on function public.add_news(text, text, text, text) to authenticat
 grant execute on function public.delete_news(text) to authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.upgrade_to_pro() to authenticated;
+grant execute on function public.save_profile(text, text, text, text, boolean, boolean, jsonb) to authenticated;
+grant execute on function public.set_sentiment(text, text) to authenticated;
+grant execute on function public.public_contact(text) to anon, authenticated;
+grant execute on function public.sentiment_counts(text) to anon, authenticated;
+grant execute on function public.leaderboard(text, text, int) to anon, authenticated;
+grant insert, delete on public.muted_users to authenticated;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
 grant select, delete on public.push_subscriptions to authenticated;
 revoke execute on function public.notify(text, text, text, text, text) from public, anon, authenticated;

@@ -11,6 +11,9 @@ export function HomeHeader() {
           <BrandMark size={22} />
         </h1>
         <div className={s.actions}>
+          <Link href="/leaderboard" className={s.btn} aria-label="Leaderboard">
+            <Icon name="trophy" size={22} />
+          </Link>
           <Link href="/search" className={s.btn} aria-label="Search">
             <Icon name="search" size={22} />
           </Link>

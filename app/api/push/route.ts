@@ -10,6 +10,24 @@ const safeEqual = (a: string, b: string) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 
+function configured() {
+  const e = process.env;
+  return {
+    publicKey: !!e.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    privateKey: !!e.VAPID_PRIVATE_KEY,
+    webhookSecret: !!e.PUSH_WEBHOOK_SECRET,
+    serviceRoleKey: !!e.SUPABASE_SERVICE_ROLE_KEY,
+  };
+}
+
+/** Setup check: shows which push settings are present (never their values). Needs the webhook secret. */
+export async function GET(request: Request) {
+  const secret = process.env.PUSH_WEBHOOK_SECRET;
+  if (!secret || !safeEqual(request.headers.get("x-push-secret") ?? "", secret)) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const c = configured();
+  return Response.json({ ready: Object.values(c).every(Boolean), ...c });
+}
+
 /**
  * Called by a Supabase Database Webhook on every INSERT into `notifications`
  * (see README). Looks up the recipient's devices and sends a Web Push to each.
@@ -34,6 +52,7 @@ export async function POST(request: Request) {
     record.actor_id ? db.from("profiles").select("name").eq("id", record.actor_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   if (!subs?.length) return Response.json({ sent: 0 });
+  const { count: unread } = await db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", record.user_id).eq("read", false);
 
   webpush.setVapidDetails(VAPID_SUBJECT ?? "mailto:admin@example.com", NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
   const message = JSON.stringify({
@@ -41,6 +60,7 @@ export async function POST(request: Request) {
     body: actor?.name ? `${actor.name} ${record.text}` : record.text,
     url: record.href,
     tag: record.type,
+    unread: unread ?? undefined,
   });
 
   let sent = 0;

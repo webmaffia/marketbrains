@@ -3,9 +3,10 @@
  * objects. Reads are public (protected by row level security), so these run on the server
  * for pages and in the browser for per-user views alike.
  */
+import { mapLeaderboardRow, type Period } from "@/lib/leaderboard";
 import { supabase } from "@/lib/supabase";
 import { mapAsset, mapComment, mapCommunity, mapNews, mapPost, mapTopic, mapUser, POST_SELECT, USER_SELECT } from "@/lib/mappers";
-import type { Asset, Comment, Community, NewsItem, Post, Topic, User } from "@/types";
+import type { Asset, Comment, Community, LeaderboardEntry, NewsItem, Post, PublicContact, SentimentCounts, Topic, User } from "@/types";
 
 const FEED_LIMIT = 200;
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
@@ -93,3 +94,25 @@ export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
 export async function getAllNews(): Promise<NewsItem[]> {
   return check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(30), "news").map(mapNews);
 }
+
+/** Contact details a member chose to make public. Private fields never leave the database. */
+export async function getPublicContact(userId: string): Promise<PublicContact> {
+  const { data } = await supabase.rpc("public_contact", { p_user: userId });
+  const row = Array.isArray(data) ? data[0] : data;
+  return { email: row?.email ?? undefined, phone: row?.phone ?? undefined };
+}
+
+
+/** Ranked contributors for a period, optionally limited to one community. */
+export async function getLeaderboard(period: Period, community?: string, limit = 50): Promise<LeaderboardEntry[]> {
+  const rows = check(await supabase.rpc("leaderboard", { p_period: period, p_community: community ?? null, p_limit: limit }), "the leaderboard");
+  return (rows as Record<string, unknown>[]).map(mapLeaderboardRow);
+}
+
+/** Members' one-tap views for a community (bullish / neutral / bearish). */
+export async function getSentimentVotes(slug: string): Promise<SentimentCounts> {
+  const { data } = await supabase.rpc("sentiment_counts", { p_slug: slug });
+  const row = Array.isArray(data) ? data[0] : data;
+  return { bull: row?.bull ?? 0, bear: row?.bear ?? 0, neutral: row?.neutral ?? 0 };
+}
+

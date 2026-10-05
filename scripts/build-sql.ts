@@ -5,6 +5,7 @@
  *   npx tsx scripts/build-sql.ts
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { LOOKALIKE_FROM, LOOKALIKE_TO, RULES } from "../lib/contentFilter";
 import { assets } from "../data/assets";
 import { communities } from "../data/communities";
 import { comments, news, posts } from "../data/posts";
@@ -71,6 +72,27 @@ insert(
 );
 insert("news", ["id", "community_slug", "source", "headline", "discussion_count", "created_at"], news.map((n) => [q(n.id), q(n.communitySlug), q(n.source), q(n.headline), q(n.discussionCount), ago(n.ageMin)]));
 
-const sql = [readFileSync("supabase/tables.sql", "utf8"), out.join("\n"), readFileSync("supabase/logic.sql", "utf8")].join("\n");
+// content_violation(): the database-side copy of lib/contentFilter.ts (the client copy is only for instant feedback).
+const checks = RULES.map((r) => {
+  const subject = r.normalize ? "n" : "t";
+  const cond = r.patterns.map((pat) => `${subject} ~* ${q(pat)}`).join("\n     or ");
+  return `  if ${cond} then\n    return ${q(r.code)};\n  end if;`;
+}).join("\n");
+const contentFn = `-- ============================================================
+-- Content rules (generated from lib/contentFilter.ts)
+-- ============================================================
+
+create or replace function public.content_violation(p_text text) returns text
+language plpgsql immutable as $$
+declare
+  t text := coalesce(p_text, '');
+  n text := translate(lower(coalesce(p_text, '')), ${q(LOOKALIKE_FROM)}, ${q(LOOKALIKE_TO)});
+begin
+${checks}
+  return null;
+end $$;
+`;
+
+const sql = [readFileSync("supabase/tables.sql", "utf8"), out.join("\n"), contentFn, readFileSync("supabase/logic.sql", "utf8")].join("\n");
 writeFileSync("supabase/setup.sql", sql);
 console.log(`supabase/setup.sql written (${sql.length} bytes)`);

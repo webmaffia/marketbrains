@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +13,7 @@ export function AuthSheet() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
@@ -25,6 +27,7 @@ export function AuthSheet() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSignup && !accepted) return setError("Please accept the Terms & Conditions to create an account.");
     setBusy(true);
     setError(null);
     if (isSignup) {
@@ -77,12 +80,28 @@ export function AuthSheet() {
                 required
               />
             </label>
+            {isSignup && (
+              <label className={s.terms}>
+                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+                <span>
+                  I am 18 or older and agree to the{" "}
+                  <Link href="/terms" target="_blank">
+                    Terms & Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" target="_blank">
+                    Privacy Policy
+                  </Link>
+                  . I understand posts are opinions, not investment advice.
+                </span>
+              </label>
+            )}
             {error && (
               <p className={s.error} role="alert">
                 {error}
               </p>
             )}
-            <Button type="submit" block disabled={busy}>
+            <Button type="submit" block disabled={busy || (isSignup && !accepted)}>
               {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
             </Button>
           </form>

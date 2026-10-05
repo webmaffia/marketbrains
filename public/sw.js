@@ -1,5 +1,5 @@
 /* MarketBrains service worker: offline shell + runtime caching. Bump VERSION to invalidate caches. */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL = `mb-shell-${VERSION}`;
 const RUNTIME = `mb-runtime-${VERSION}`;
 const SHELL_URLS = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];
@@ -59,7 +59,7 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {}
-  event.waitUntil(
+  const tasks = [
     self.registration.showNotification(data.title || "MarketBrains", {
       body: data.body || "",
       icon: "/icons/icon-192.png",
@@ -67,7 +67,12 @@ self.addEventListener("push", (event) => {
       tag: data.tag,
       data: { url: data.url || "/notifications" },
     }),
-  );
+  ];
+  // Home-screen icon badge (installed PWAs): the server sends the member's unread count.
+  if (typeof data.unread === "number" && self.navigator.setAppBadge) {
+    tasks.push((data.unread > 0 ? self.navigator.setAppBadge(data.unread) : self.navigator.clearAppBadge()).catch(() => {}));
+  }
+  event.waitUntil(Promise.all(tasks));
 });
 
 self.addEventListener("notificationclick", (event) => {

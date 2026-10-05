@@ -19,6 +19,8 @@ export interface User {
   avatarUrl?: string;
   plan?: Plan;
   isAdmin?: boolean;
+  /** Public social links (x, linkedin, youtube, instagram, telegram, website). Unlocked after 5 discussions. */
+  socialLinks?: Record<string, string>;
 }
 
 export interface Asset {
@@ -122,4 +124,37 @@ export interface NewsItem {
 export interface Directory {
   users: Record<string, User>;
   communities: Record<string, Community>;
+}
+
+/** The signed-in member's own contact details. Others only ever see the fields marked public. */
+export interface Contact {
+  email: string;
+  phone: string;
+  emailPublic: boolean;
+  phonePublic: boolean;
+}
+
+export interface PublicContact {
+  email?: string;
+  phone?: string;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  name: string;
+  avatarUrl?: string;
+  hue: number;
+  verified?: boolean;
+  score: number;
+  posts: number;
+  comments: number;
+  likes: number;
+}
+
+export type Stance3 = "bull" | "bear" | "neutral";
+export interface SentimentCounts {
+  bull: number;
+  bear: number;
+  neutral: number;
 }

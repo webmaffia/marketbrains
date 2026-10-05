@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
 import { RegisterSW } from "@/components/layout/RegisterSW";
+import { ThemeSync } from "@/components/layout/ThemeSync";
 import { StoreProvider } from "@/features/store/StoreProvider";
+import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
 import "@/styles/globals.scss";
 
 // Content comes from Supabase and changes constantly, so pages render per request.
@@ -33,12 +35,19 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
-  themeColor: "#eff4f2",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/* Sets a saved Light/Dark choice before first paint; with no choice the system setting applies via CSS. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         <a href="#main" className="sr-only">
           Skip to content
@@ -47,6 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AppShell>{children}</AppShell>
         </StoreProvider>
         <RegisterSW />
+        <ThemeSync />
       </body>
     </html>
   );

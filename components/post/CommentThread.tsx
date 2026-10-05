@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useStore } from "@/features/store/StoreProvider";
+import { checkContent } from "@/lib/contentFilter";
 import { compact, cx, timeAgo } from "@/lib/format";
 import type { Comment, Directory } from "@/types";
 import s from "./CommentThread.module.scss";
@@ -25,6 +26,7 @@ export function CommentThread({ postId, comments, dir }: Props) {
   const [likeDelta, setLikeDelta] = useState<Record<string, number>>({});
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
+  const problem = checkContent(text)?.message;
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const all = [...comments, ...added.filter((a) => !comments.some((c) => c.id === a.id))];
@@ -35,7 +37,7 @@ export function CommentThread({ postId, comments, dir }: Props) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const body = text.trim();
-    if (!body || sending) return;
+    if (!body || sending || problem) return;
     setSending(true);
     // Replies are flattened to one level: replying to a reply attaches to its parent.
     const created = await addComment(postId, body, replyTo ? (replyTo.parentId ?? replyTo.id) : undefined);
@@ -112,6 +114,11 @@ export function CommentThread({ postId, comments, dir }: Props) {
             </button>
           </div>
         )}
+        {problem && (
+          <p className={s.problem} role="alert">
+            {problem}
+          </p>
+        )}
         {isLoggedIn ? (
           <div className={s.inputRow}>
             <textarea
@@ -123,7 +130,7 @@ export function CommentThread({ postId, comments, dir }: Props) {
               aria-label="Add a comment"
               enterKeyHint="send"
             />
-            <button type="submit" className={s.send} disabled={!text.trim() || sending} aria-label="Post comment">
+            <button type="submit" className={s.send} disabled={!text.trim() || sending || !!problem} aria-label="Post comment">
               <Icon name="plus" size={20} style={{ transform: "rotate(0deg)" }} />
             </button>
           </div>

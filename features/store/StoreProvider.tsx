@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { mapComment, mapNotification, mapUser, USER_SELECT } from "@/lib/mappers";
 import { disablePush } from "@/lib/push";
 import { supabase } from "@/lib/supabase";
-import type { Comment, Notification, Plan, Post, User } from "@/types";
+import { RULES } from "@/lib/contentFilter";
+import type { Comment, Contact, Notification, Plan, Post, Stance3, User } from "@/types";
 
 /** Everything that belongs to the signed-in user. Loaded from Supabase after sign-in. */
 interface UserState {
@@ -16,6 +17,9 @@ interface UserState {
   joined: string[];
   votes: Record<string, string>;
   notifications: Notification[];
+  contact: Contact | null;
+  /** People the member marked "not interested": their posts are hidden everywhere. */
+  muted: string[];
 }
 
 const EMPTY: UserState = {
@@ -27,6 +31,8 @@ const EMPTY: UserState = {
   joined: [],
   votes: {},
   notifications: [],
+  contact: null,
+  muted: [],
 };
 
 const DRAFT_KEY = "mb-draft-v1";
@@ -75,6 +81,11 @@ interface Store extends UserState {
   toggleSave: (postId: string) => void;
   toggleFollow: (userId: string) => void;
   toggleJoin: (slug: string) => void;
+  /** Hides (or un-hides) every post from this person. */
+  toggleMute: (userId: string, name?: string) => void;
+  /** Saves profile details. Resolves to an error message, or null on success. */
+  saveProfile: (input: ProfileInput) => Promise<string | null>;
+  setSentiment: (slug: string, stance: Stance3) => Promise<boolean>;
   vote: (postId: string, optionId: string) => void;
   addPost: (p: NewPost) => Promise<string | null>;
   addComment: (postId: string, body: string, parentId?: string) => Promise<Comment | null>;
@@ -98,10 +109,27 @@ export function useStore(): Store {
 
 const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
+/** Turns a database error into something a member can act on. */
+function friendlyError(message: string, fallback: string): string {
+  const blocked = /CONTENT_BLOCKED:(\w+)/.exec(message);
+  if (blocked) return RULES.find((r) => r.code === blocked[1])?.message ?? "That content isn't allowed here.";
+  return fallback;
+}
+
+export interface ProfileInput {
+  name: string;
+  bio: string;
+  email: string;
+  phone: string;
+  emailPublic: boolean;
+  phonePublic: boolean;
+  social: Record<string, string>;
+}
+
 const NOTIF_SELECT = "*, actor:profiles!actor_id(*)";
 
 async function loadUserState(userId: string): Promise<UserState> {
-  const [profile, likes, cLikes, saves, follows, members, votes, notifs] = await Promise.all([
+  const [profile, likes, cLikes, saves, follows, members, votes, notifs, contact, muted] = await Promise.all([
     supabase.from("profiles").select(USER_SELECT).eq("id", userId).maybeSingle(),
     supabase.from("post_likes").select("post_id").eq("user_id", userId),
     supabase.from("comment_likes").select("comment_id").eq("user_id", userId),
@@ -110,8 +138,12 @@ async function loadUserState(userId: string): Promise<UserState> {
     supabase.from("community_members").select("community_slug").eq("user_id", userId),
     supabase.from("poll_votes").select("post_id, option_id").eq("user_id", userId),
     supabase.from("notifications").select(NOTIF_SELECT).eq("user_id", userId).order("created_at", { ascending: false }).limit(60),
+    supabase.from("profile_contacts").select("*").eq("user_id", userId).maybeSingle(),
+    supabase.from("muted_users").select("muted_id").eq("user_id", userId),
   ]);
   return {
+    contact: contact.data ? { email: contact.data.email ?? "", phone: contact.data.phone ?? "", emailPublic: contact.data.email_public, phonePublic: contact.data.phone_public } : null,
+    muted: (muted.data ?? []).map((r) => r.muted_id),
     profile: profile.data ? mapUser(profile.data) : null,
     liked: (likes.data ?? []).map((r) => r.post_id),
     likedComments: (cLikes.data ?? []).map((r) => r.comment_id),
@@ -193,6 +225,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [userId, authChecked, patch]);
 
+  // Home-screen icon badge for installed PWAs (Badging API). Unsupported browsers skip this.
+  const unread = state.notifications.filter((n) => !n.read).length;
+  useEffect(() => {
+    if (!authChecked || !("setAppBadge" in navigator)) return;
+    const count = userId ? unread : 0;
+    (count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(() => {});
+  }, [authChecked, userId, unread]);
+
   const value = useMemo<Store>(() => {
     const hydrated = authChecked && loaded;
     const isLoggedIn = !!userId;
@@ -265,7 +305,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return null;
       },
       signUp: async (name, email, password) => {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name, terms_accepted_at: new Date().toISOString() } } });
         if (error) return { error: error.message, needsConfirmation: false };
         // No session means the project requires email confirmation before first sign-in.
         if (!data.session) return { error: null, needsConfirmation: true };
@@ -332,7 +372,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           p_image_url: p.imageUrl ?? null,
         });
         if (error) {
-          showToast(error.message.includes("Pro") ? "Discussions are for Pro members" : "Couldn't post. Try again.");
+          showToast(error.message.includes("Pro") ? "Discussions are for Pro members" : friendlyError(error.message, "Couldn't post. Try again."));
           return null;
         }
         setDraft("");
@@ -345,10 +385,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         const { data, error } = await supabase.from("comments").insert({ post_id: postId, author_id: me, parent_id: parentId ?? null, body }).select().single();
         if (error || !data) {
-          showToast("Couldn't post your comment");
+          showToast(friendlyError(error?.message ?? "", "Couldn't post your comment"));
           return null;
         }
         return mapComment(data);
+      },
+
+      toggleMute: (id, name) =>
+        guard("Sign in to personalise your feed", () => {
+          if (id === me) return;
+          const was = state.muted.includes(id);
+          const flip = () => patch((s) => ({ muted: toggle(s.muted, id) }));
+          optimistic(
+            flip,
+            flip,
+            was ? supabase.from("muted_users").delete().eq("user_id", me).eq("muted_id", id) : supabase.from("muted_users").insert({ user_id: me, muted_id: id }),
+          );
+          showToast(was ? `Showing posts from ${name ?? "them"} again` : `You won't see posts from ${name ?? "them"}`);
+        }),
+
+      saveProfile: async (input) => {
+        const { error } = await supabase.rpc("save_profile", {
+          p_name: input.name,
+          p_bio: input.bio,
+          p_email: input.email,
+          p_phone: input.phone,
+          p_email_public: input.emailPublic,
+          p_phone_public: input.phonePublic,
+          p_social: input.social,
+        });
+        if (error) {
+          if (error.message.includes("SOCIAL_LOCKED")) return "Social links unlock after you publish 5 discussions.";
+          return friendlyError(error.message, error.message || "Couldn't save your profile.");
+        }
+        const fresh = await loadUserState(me);
+        patch({ profile: fresh.profile, contact: fresh.contact });
+        showToast("Profile saved");
+        return null;
+      },
+
+      setSentiment: async (slug, stance) => {
+        if (!isLoggedIn) {
+          setAuth({ open: true, mode: "login", reason: "Sign in to share your view" });
+          return false;
+        }
+        const { error } = await supabase.rpc("set_sentiment", { p_slug: slug, p_stance: stance });
+        if (error) {
+          showToast("Couldn't save your view. Try again.");
+          return false;
+        }
+        return true;
       },
 
       updateAvatar: async (file) => {
