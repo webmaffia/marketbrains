@@ -1,5 +1,5 @@
 /* MarketBrains service worker: offline shell + runtime caching. Bump VERSION to invalidate caches. */
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `mb-shell-${VERSION}`;
 const RUNTIME = `mb-runtime-${VERSION}`;
 const SHELL_URLS = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];
@@ -51,4 +51,38 @@ self.addEventListener("fetch", (event) => {
       ),
     );
   }
+});
+
+// Web Push: show the notification, then route taps to the right screen.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {}
+  event.waitUntil(
+    self.registration.showNotification(data.title || "MarketBrains", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag,
+      data: { url: data.url || "/notifications" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/notifications", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (list) => {
+      for (const client of list) {
+        if (new URL(client.url).origin === self.location.origin) {
+          await client.focus();
+          if ("navigate" in client) await client.navigate(url);
+          return;
+        }
+      }
+      await self.clients.openWindow(url);
+    }),
+  );
 });

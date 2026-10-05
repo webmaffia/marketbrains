@@ -9,6 +9,15 @@ Mobile-first investor community PWA (Next.js 16, App Router, TypeScript, SCSS mo
 3. **Authentication → Providers → Email** is on by default. With "Confirm email" enabled, new members get a confirmation link before their first sign-in; turn it off while developing if you prefer.
 4. Realtime notifications need the `notifications` table in the `supabase_realtime` publication. `setup.sql` adds it; check **Database → Replication** if the bell does not update live.
 
+### Push notifications (PWA)
+
+Members can turn on push alerts per device (Alerts or Profile screen). Delivery works like this: a database row is inserted into `notifications` -> a Supabase Database Webhook calls `POST /api/push` -> the route sends a Web Push to each of that member's saved devices.
+
+1. Generate keys once with `npx web-push generate-vapid-keys` and set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (see `.env.example`).
+2. Set `PUSH_WEBHOOK_SECRET` to any long random string, and `SUPABASE_SERVICE_ROLE_KEY` to the secret key from **Project Settings -> API keys**. The service key is server-only; never prefix it with `NEXT_PUBLIC_`.
+3. In Supabase go to **Database -> Webhooks -> Create a new hook**: table `notifications`, event **Insert**, type **HTTP Request**, method `POST`, URL `https://YOUR-SITE/api/push`, and add the HTTP header `x-push-secret` with the same value as `PUSH_WEBHOOK_SECRET`. The URL must be publicly reachable, so use your deployed site (or a tunnel such as ngrok while testing).
+4. Push only works in the production build (the service worker is not registered by `npm run dev`), over HTTPS or localhost. On iPhone, the site must be added to the Home Screen first (iOS 16.4+).
+
 ```bash
 npm install
 npm run dev                  # http://localhost:3000
@@ -40,6 +49,7 @@ node scripts/gen-icons.mjs   # regenerate placeholder PWA icons
 - Likes, saves, follows, memberships, votes, comments and posts are written to Supabase. Counters (likes, comments, followers, members, poll votes) and notifications are maintained by database triggers, and clients cannot write them directly (row level security + column grants).
 - Creating a discussion or poll goes through the `create_post` RPC and needs a **Pro** member. The "Upgrade to Pro" button calls `upgrade_to_pro()`, a demo stand-in until a payment provider is connected.
 - Discussions can carry one image (JPG/PNG/WebP/GIF, up to 5 MB). Photos are downscaled in the browser, uploaded to the public `post-images` Storage bucket under the member's own folder, and linked through `create_post`.
+- Members can set or remove their profile photo (camera button on their own profile). It is cropped to a square in the browser, stored in the public `avatars` bucket under their own folder, and the database only accepts avatar URLs that point at that folder.
 - Drafts are kept in `localStorage` on the device.
 
 ## Known gaps

@@ -167,3 +167,13 @@ alter table public.news     add column if not exists url text;
 alter table public.posts    add column if not exists news_id text references public.news (id) on delete set null;
 create index if not exists posts_news_idx on public.posts (news_id) where news_id is not null;
 alter table public.posts    add column if not exists image_url text;
+
+-- Web Push: one row per browser/device a member has enabled notifications on.
+create table if not exists public.push_subscriptions (
+  endpoint   text primary key,
+  user_id    text not null references public.profiles (id) on delete cascade,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists push_subscriptions_user_idx on public.push_subscriptions (user_id);

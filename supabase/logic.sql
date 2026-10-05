@@ -277,6 +277,16 @@ begin
   delete from public.news where id = p_id;
 end $$;
 
+-- Registers this device for push. A device that was used by someone else before is re-assigned to the caller.
+create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Not signed in'; end if;
+  insert into public.push_subscriptions (endpoint, user_id, p256dh, auth)
+  values (p_endpoint, auth.uid()::text, p_p256dh, p_auth)
+  on conflict (endpoint) do update set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth;
+end $$;
+
 -- Demo upgrade: there is no payment provider wired up yet. Replace the body with a
 -- webhook-driven update (service role) before charging real money.
 create or replace function public.upgrade_to_pro() returns void
@@ -306,6 +316,7 @@ alter table public.saves             enable row level security;
 alter table public.follows           enable row level security;
 alter table public.news              enable row level security;
 alter table public.notifications     enable row level security;
+alter table public.push_subscriptions enable row level security;
 
 -- Public read
 do $$
@@ -368,6 +379,11 @@ drop policy if exists "own update" on public.notifications;
 create policy "own read"   on public.notifications for select using (user_id = public.uid());
 create policy "own update" on public.notifications for update using (user_id = public.uid()) with check (user_id = public.uid());
 
+drop policy if exists "own read"   on public.push_subscriptions;
+drop policy if exists "own delete" on public.push_subscriptions;
+create policy "own read"   on public.push_subscriptions for select using (user_id = public.uid());
+create policy "own delete" on public.push_subscriptions for delete using (user_id = public.uid());
+
 drop policy if exists "own update" on public.profiles;
 create policy "own update" on public.profiles for update using (id = public.uid()) with check (id = public.uid());
 
@@ -387,6 +403,8 @@ grant execute on function public.add_news(text, text, text, text) to authenticat
 grant execute on function public.delete_news(text) to authenticated;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.upgrade_to_pro() to authenticated;
+grant execute on function public.save_push_subscription(text, text, text) to authenticated;
+grant select, delete on public.push_subscriptions to authenticated;
 revoke execute on function public.notify(text, text, text, text, text) from public, anon, authenticated;
 
 -- Live notifications
@@ -408,3 +426,27 @@ create policy "post images upload" on storage.objects for insert to authenticate
   with check (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "post images delete" on storage.objects for delete to authenticated
   using (bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ============================================================
+-- Storage: avatars (public read, members write only inside their own folder)
+-- ============================================================
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do update set public = true, file_size_limit = 2097152, allowed_mime_types = array['image/webp', 'image/jpeg', 'image/png'];
+
+drop policy if exists "avatars upload" on storage.objects;
+drop policy if exists "avatars delete" on storage.objects;
+create policy "avatars upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatars delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- A profile photo can only point at the member's own upload (or a seed placeholder), never an arbitrary URL.
+alter table public.profiles drop constraint if exists profiles_avatar_url_check;
+alter table public.profiles add constraint profiles_avatar_url_check check (
+  avatar_url is null
+  or avatar_url like 'https://i.pravatar.cc/%'
+  or position('/storage/v1/object/public/avatars/' || id || '/' in avatar_url) > 0
+);
+

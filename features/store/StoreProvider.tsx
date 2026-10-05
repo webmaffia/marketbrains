@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { mapComment, mapNotification, mapUser, USER_SELECT } from "@/lib/mappers";
+import { disablePush } from "@/lib/push";
 import { supabase } from "@/lib/supabase";
 import type { Comment, Notification, Plan, Post, User } from "@/types";
 
@@ -77,6 +78,8 @@ interface Store extends UserState {
   vote: (postId: string, optionId: string) => void;
   addPost: (p: NewPost) => Promise<string | null>;
   addComment: (postId: string, body: string, parentId?: string) => Promise<Comment | null>;
+  /** Sets (or, with null, removes) the member's profile photo. Resolves true on success. */
+  updateAvatar: (file: File | null) => Promise<boolean>;
   /** Deletes one of the signed-in member's own discussions (and its image). Resolves true on success. */
   deletePost: (postId: string, imageUrl?: string) => Promise<boolean>;
   markRead: (id: string) => void;
@@ -271,7 +274,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { error: null, needsConfirmation: false };
       },
       logout: () => {
-        supabase.auth.signOut().then(() => showToast("Signed out"));
+        // Drop this device's push subscription first so the next person on it doesn't get this account's alerts.
+        disablePush()
+          .catch(() => {})
+          .then(() => supabase.auth.signOut())
+          .then(() => showToast("Signed out"));
       },
       upgrade: () => {
         supabase.rpc("upgrade_to_pro").then(({ error }) => {
@@ -344,6 +351,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return mapComment(data);
       },
 
+      updateAvatar: async (file) => {
+        const previous = state.profile?.avatarUrl;
+        let path: string | null = null;
+        let url: string | null = null;
+        if (file) {
+          path = `${me}/avatar-${Date.now()}.webp`;
+          const { error } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+          if (error) {
+            showToast("Couldn't upload your photo. Try again.");
+            return false;
+          }
+          url = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+        }
+        const { data, error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", me).select("id");
+        if (error || !data?.length) {
+          if (path) supabase.storage.from("avatars").remove([path]).then(() => {});
+          showToast("Couldn't save your photo. Try again.");
+          return false;
+        }
+        patch((s) => (s.profile ? { profile: { ...s.profile, avatarUrl: url ?? undefined } } : {}));
+        // Tidy up the file we just replaced (only our own uploads live in the avatars bucket).
+        const old = previous?.split("/avatars/")[1];
+        if (old) supabase.storage.from("avatars").remove([decodeURIComponent(old)]).then(() => {});
+        showToast(file ? "Profile photo updated" : "Profile photo removed");
+        return true;
+      },
       deletePost: async (postId, imageUrl) => {
         const { data, error } = await supabase.from("posts").delete().eq("id", postId).select("id");
         if (error || !data?.length) {

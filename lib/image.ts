@@ -30,3 +30,19 @@ export async function prepareImage(file: File): Promise<File> {
   } catch {}
   return file;
 }
+
+const AVATAR_EDGE = 512;
+
+/** Center-crops to a square and shrinks to 512px WebP, which keeps profile photos small and consistent. */
+export async function prepareAvatar(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const out = Math.min(AVATAR_EDGE, side);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = out;
+  canvas.getContext("2d")!.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, out, out);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.88));
+  if (!blob) throw new Error("Could not process image");
+  return new File([blob], "avatar.webp", { type: "image/webp" });
+}

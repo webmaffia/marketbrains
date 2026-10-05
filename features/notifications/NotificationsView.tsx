@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NotificationItem } from "@/components/community/NotificationItem";
 import { useStore } from "@/features/store/StoreProvider";
+import { PushToggle } from "./PushToggle";
 import type { Notification } from "@/types";
 import s from "./NotificationsView.module.scss";
 
@@ -26,7 +27,13 @@ export function NotificationsView() {
   const fresh = items.filter((n) => !n.read);
   const earlier = items.filter((n) => n.read);
 
-  if (!items.length) return <EmptyState icon="bell" title="All quiet" text="When people reply to or follow you, it shows up here." />;
+  if (!items.length)
+    return (
+      <>
+        <PushToggle />
+        <EmptyState icon="bell" title="All quiet" text="When people reply to or follow you, it shows up here." />
+      </>
+    );
 
   const section = (title: string, list: Notification[]) =>
     list.length > 0 && (
@@ -42,6 +49,7 @@ export function NotificationsView() {
 
   return (
     <>
+      <PushToggle />
       {fresh.length > 0 && (
         <div className={s.bar}>
           <Button variant="secondary" size="sm" onClick={markAllRead}>

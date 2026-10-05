@@ -1,0 +1,63 @@
+@use "tokens" as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.photo {
+  position: relative;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--bg);
+}
+.cam {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 3px var(--bg);
+  &:disabled {
+    opacity: 0.6;
+  }
+  @include focus-ring;
+  // Keep a 44px tap target without a bigger visual button.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+}
+.busy {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 30%;
+    border: 3px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+.remove {
+  min-height: 36px;
+  padding: 0 8px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

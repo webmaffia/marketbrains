@@ -19,9 +19,11 @@
   margin-top: -44px;
   padding: 0 var(--sp-5) var(--sp-4);
   text-align: center;
-  > :first-child {
-    box-shadow: 0 0 0 4px var(--bg);
-  }
+}
+.ring {
+  display: inline-flex;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--bg);
 }
 .name {
   display: flex;

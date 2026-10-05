@@ -9,6 +9,7 @@ import { PostList } from "@/components/post/PostList";
 import { useStore } from "@/features/store/StoreProvider";
 import { compact } from "@/lib/format";
 import type { Community, Directory, Post, User } from "@/types";
+import { AvatarEditor } from "./AvatarEditor";
 import { FollowButton } from "./FollowButton";
 import s from "./UserProfile.module.scss";
 
@@ -35,7 +36,7 @@ export function UserProfile({ user, posts, communities, dir, isSelf: selfProp }:
     <>
       <div className={s.cover} style={{ "--h": user.hue } as React.CSSProperties} aria-hidden="true" />
       <section className={s.head}>
-        <UserAvatar user={user} size={84} />
+        {isSelf ? <AvatarEditor user={user} size={84} /> : <span className={s.ring}><UserAvatar user={user} size={84} /></span>}
         <h2 className={s.name}>
           {user.name}
           {user.verified && <Icon name="verified" size={18} filled className={s.verified} />}

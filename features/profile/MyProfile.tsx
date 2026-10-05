@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { UserProfile } from "@/components/user/UserProfile";
 import { useStore } from "@/features/store/StoreProvider";
+import { PushToggle } from "@/features/notifications/PushToggle";
 import { getPostsByUser } from "@/lib/api";
 import type { Community, Directory, Post } from "@/types";
 import s from "./MyProfile.module.scss";
@@ -65,6 +66,7 @@ export function MyProfile({ communities, dir }: Props) {
           <span>Saved posts</span>
           <span className={s.val}>{saved.length}</span>
         </div>
+        <PushToggle />
         {profile.isAdmin && (
           <Link href="/admin/news" className={s.row}>
             <Icon name="sparkle" size={20} />
