@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { useStore } from "@/features/store/StoreProvider";
 import { WELCOME_KEY } from "./welcomeGate";
@@ -25,12 +25,9 @@ export function WelcomeScreen() {
     router.replace("/");
   };
 
-  // Signing in from the auth sheet completes the welcome. Already-signed-in users stay and tap Continue.
-  const wasLoggedIn = useRef<boolean | null>(null);
+  // Signed-in users (fresh login or returning) never see the welcome screen.
   useEffect(() => {
-    if (!hydrated) return;
-    if (wasLoggedIn.current === false && isLoggedIn) enter();
-    wasLoggedIn.current = isLoggedIn;
+    if (hydrated && isLoggedIn) enter();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, hydrated]);
 
