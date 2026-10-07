@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { FollowButton } from "@/components/user/FollowButton";
 import { PostList } from "@/components/post/PostList";
 import { timeAgo } from "@/lib/format";
+import { scoreHeadline } from "@/lib/newsSentiment";
 import type { Quote } from "@/lib/prices";
 import type { Asset, Community, Directory, LeaderboardEntry, NewsItem, Post, SentimentCounts, User } from "@/types";
 import { CommunityOverview } from "./CommunityOverview";
@@ -29,11 +30,12 @@ export function CommunityView({ community, asset, quote, sentiment, leaders, pos
   const earnings = posts.filter((p) => p.type === "earnings");
   const newsPosts = posts.filter((p) => p.type === "news");
   const questions = posts.filter((p) => p.type === "question");
+  const TONE = { bull: "Positive", bear: "Negative", neutral: "Neutral" } as const;
 
   const panels = {
     discussions: (
       <>
-        <CommunityOverview community={community} posts={posts} sentiment={sentiment} leaders={leaders} changePct={quote?.changePct} />
+        <CommunityOverview community={community} posts={posts} sentiment={sentiment} leaders={leaders} news={news} changePct={quote?.changePct} />
         <PostList
           posts={posts}
           dir={dir}
@@ -50,6 +52,16 @@ export function CommunityView({ community, asset, quote, sentiment, leaders, pos
               <li key={n.id} className={s.news}>
                 <p className={s.src}>
                   {n.source} · {timeAgo(n.ageMin)}
+                  {(() => {
+                    const h = scoreHeadline(n);
+                    return (
+                      <>
+                        {" · "}
+                        <span className={s[`tone_${h.tone}`]}>{TONE[h.tone]}</span>
+                        {h.events.length > 0 && ` · ${h.events.join(", ")}`}
+                      </>
+                    );
+                  })()}
                 </p>
                 <p className={s.headline}>
                   {n.url ? (
@@ -60,6 +72,7 @@ export function CommunityView({ community, asset, quote, sentiment, leaders, pos
                     n.headline
                   )}
                 </p>
+                {n.analysis?.summary && <p className={s.aiNote}>{n.analysis.summary}</p>}
                 <div className={s.newsFoot}>
                   <p className={s.disc}>
                     <Icon name="comment" size={15} /> {n.discussionCount} {n.discussionCount === 1 ? "discussion" : "discussions"}

@@ -1,4 +1,8 @@
-import type { Post, Stance } from "@/types";
+import type { NewsItem, Post, Stance } from "@/types";
+import { buildNewsMeter } from "@/lib/newsSentiment";
+
+/** Sections built from community data stay hidden until there is at least this much to read. */
+export const MIN_DATA = 10;
 
 const DAY = 24 * 60;
 const engagement = (p: Post) => 1 + p.likes + p.comments * 2;
@@ -19,6 +23,8 @@ export interface Milestone {
   ageMin: number;
   stance?: Stance;
   href?: string;
+  /** True when href leaves the site (a news article). */
+  external?: boolean;
 }
 
 export interface Outlook {
@@ -42,6 +48,8 @@ export interface Insights {
   milestones: Milestone[];
   recent: Outlook;
   earlier: Outlook;
+  /** Tone of the news headlines, read from the words used. Not a member opinion. */
+  newsTone: Outlook | null;
   reality: Reality | null;
   concerns: string[];
   asks: Post[];
@@ -60,6 +68,7 @@ const INTENTS: { id: string; label: string; hint: string; words: RegExp }[] = [
 
 const CONCERNS = /\b(debt|valuation|competition|regulat\w*|margin pressure|slowdown|delay\w*|volatil\w*|dilution|inflation|rate hike|weak demand|downgrade|lawsuit|selling pressure)\b/gi;
 
+
 const text = (p: Post) => `${p.title} ${p.body}`;
 
 function outlook(posts: Post[], window: string): Outlook {
@@ -71,42 +80,51 @@ function outlook(posts: Post[], window: string): Outlook {
   return { window, net, ...c, total, label };
 }
 
-export function buildInsights(name: string, posts: Post[], changePct?: number | null): Insights {
-  // 1. Objectives: every discussion votes for the intents its text matches, weighted by engagement.
+/** Headline tone, from the same news meter shown on the News tab. */
+function headlineTone(news: NewsItem[]): Outlook | null {
+  const m = buildNewsMeter(news);
+  if (!m) return null;
+  return { window: "News headlines", net: m.value, bull: m.bull, bear: m.bear, neutral: m.neutral, total: m.total, label: m.label };
+}
+
+export function buildInsights(name: string, posts: Post[], news: NewsItem[], changePct?: number | null): Insights {
+  // 1. Objectives: every discussion and headline votes for the intents its text matches; discussions are weighted by engagement.
   const scores = new Map<string, { score: number; count: number }>();
-  for (const p of posts) {
-    const w = engagement(p);
-    const hit = INTENTS.filter((i) => i.words.test(text(p)));
-    for (const i of hit.length ? hit : []) {
+  const vote = (hit: typeof INTENTS, weight: number) => {
+    for (const i of hit) {
       const cur = scores.get(i.id) ?? { score: 0, count: 0 };
-      scores.set(i.id, { score: cur.score + w / hit.length, count: cur.count + 1 });
+      scores.set(i.id, { score: cur.score + weight / hit.length, count: cur.count + 1 });
     }
-  }
+  };
+  for (const p of posts) vote(INTENTS.filter((i) => i.words.test(text(p))), engagement(p));
+  for (const n of news) vote(INTENTS.filter((i) => i.words.test(n.headline)), 2);
   const sum = [...scores.values()].reduce((a, b) => a + b.score, 0) || 1;
   const objectives = INTENTS.filter((i) => scores.has(i.id))
     .map((i) => ({ id: i.id, label: i.label, hint: i.hint, share: Math.round((scores.get(i.id)!.score / sum) * 100), count: scores.get(i.id)!.count }))
     .sort((a, b) => b.share - a.share)
     .slice(0, 3);
 
-  // 2. Sentiment now versus before.
-  const recentPosts = posts.filter((p) => p.ageMin <= 7 * DAY);
-  const earlierPosts = posts.filter((p) => p.ageMin > 7 * DAY && p.ageMin <= 37 * DAY);
-  const recent = outlook(recentPosts, "Last 7 days");
-  const earlier = outlook(earlierPosts, "Before that");
+  // 2. Sentiment now versus before, plus the tone of the headlines.
+  const recent = outlook(posts.filter((p) => p.ageMin <= 7 * DAY), "Members, last 7 days");
+  const earlier = outlook(posts.filter((p) => p.ageMin > 7 * DAY && p.ageMin <= 37 * DAY), "Members, before that");
+  const newsTone = headlineTone(news);
 
   // 3. Milestones: the moments that shaped the conversation, newest first.
   const href = (p: Post) => `/community/${p.communitySlug}/post/${p.id}`;
   const ms: Milestone[] = [];
-  const first = <T,>(a: T[]) => a[0];
   const byAge = (a: Post, b: Post) => a.ageMin - b.ageMin;
 
-  const results = first(posts.filter((p) => p.type === "earnings").sort(byAge));
+  const results = posts.filter((p) => p.type === "earnings").sort(byAge)[0];
   if (results) ms.push({ id: "m-res", kind: "results", title: "Results discussed", detail: results.title, ageMin: results.ageMin, stance: results.stance, href: href(results) });
 
-  const news = first(posts.filter((p) => p.type === "news").sort(byAge));
-  if (news) ms.push({ id: "m-news", kind: "news", title: "News reaction", detail: news.title, ageMin: news.ageMin, stance: news.stance, href: href(news) });
+  const reaction = posts.filter((p) => p.type === "news").sort(byAge)[0];
+  if (reaction) ms.push({ id: "m-react", kind: "news", title: "News reaction", detail: reaction.title, ageMin: reaction.ageMin, stance: reaction.stance, href: href(reaction) });
 
-  const poll = first(posts.filter((p) => p.poll).sort(byAge));
+  for (const n of [...news].sort((a, b) => a.ageMin - b.ageMin).slice(0, 2)) {
+    ms.push({ id: `m-${n.id}`, kind: "news", title: `Headline · ${n.source}`, detail: n.headline, ageMin: n.ageMin, href: n.url, external: true });
+  }
+
+  const poll = posts.filter((p) => p.poll).sort(byAge)[0];
   if (poll?.poll) {
     const top = [...poll.poll.options].sort((a, b) => b.votes - a.votes)[0];
     const votes = poll.poll.options.reduce((a, o) => a + o.votes, 0);
@@ -121,41 +139,50 @@ export function buildInsights(name: string, posts: Post[], changePct?: number | 
     ms.push({ id: "m-shift", kind: "shift", title: up ? "Mood turned more bullish" : "Mood turned more bearish", detail: `${earlier.label} before, ${recent.label.toLowerCase()} this week`, ageMin: 0 });
   }
 
-  const milestones = ms.sort((a, b) => a.ageMin - b.ageMin).slice(0, 5);
+  const milestones = ms.sort((a, b) => a.ageMin - b.ageMin).slice(0, 6);
 
-  // 4. What members think versus what the market actually did.
+  // 4. What people think versus what the market actually did. Falls back to headline tone when no members have voiced a view.
   let reality: Reality | null = null;
-  if (changePct != null && recent.total >= 2) {
-    const thinks = recent.net > 0.12 ? "bullish" : recent.net < -0.12 ? "bearish" : "mixed";
+  const view = recent.total >= 2 ? { net: recent.net, who: "Members" } : newsTone ? { net: newsTone.net, who: "Headlines" } : null;
+  if (changePct != null && view) {
+    const thinks = view.net > 0.12 ? "bullish" : view.net < -0.12 ? "bearish" : "mixed";
     const moved = changePct > 0.3 ? "up" : changePct < -0.3 ? "down" : "flat";
     const agree = (thinks === "bullish" && moved === "up") || (thinks === "bearish" && moved === "down") || (thinks === "mixed" && moved === "flat");
     const against = (thinks === "bullish" && moved === "down") || (thinks === "bearish" && moved === "up");
     const pct = `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`;
+    const who = view.who;
     reality = agree
-      ? { verdict: "aligned", title: "Members and market agree", text: `Members are ${thinks} and the price is ${moved === "flat" ? "flat" : moved} ${pct} today.` }
+      ? { verdict: "aligned", title: `${who} and market agree`, text: `${who} read ${thinks} and the price is ${moved === "flat" ? "flat" : moved} ${pct} today.` }
       : against
-        ? { verdict: "diverging", title: "Members and market disagree", text: `Members are ${thinks}, but the price is ${moved} ${pct} today. Worth reading why before following the crowd.` }
-        : { verdict: "unclear", title: "No clear signal yet", text: `Members are ${thinks}; the price moved ${pct} today.` };
+        ? { verdict: "diverging", title: `${who} and market disagree`, text: `${who} read ${thinks}, but the price is ${moved} ${pct} today. Worth checking why before following the crowd.` }
+        : { verdict: "unclear", title: "No clear signal yet", text: `${who} read ${thinks}; the price moved ${pct} today.` };
   }
 
   // 5. Recurring worries and open questions.
   const seen = new Map<string, number>();
-  for (const p of posts) for (const m of text(p).match(CONCERNS) ?? []) seen.set(m.toLowerCase(), (seen.get(m.toLowerCase()) ?? 0) + 1);
+  const count = (s: string) => {
+    for (const m of s.match(CONCERNS) ?? []) seen.set(m.toLowerCase(), (seen.get(m.toLowerCase()) ?? 0) + 1);
+  };
+  for (const p of posts) count(text(p));
+  for (const n of news) count(n.headline);
   const concerns = [...seen.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k]) => k);
   const asks = posts.filter((p) => p.type === "question").sort((a, b) => engagement(b) - engagement(a)).slice(0, 3);
 
   // 6. One combined read of everything above.
   const parts: string[] = [];
-  if (!posts.length) parts.push(`There is not enough discussion about ${name} to summarise yet.`);
+  if (!posts.length && !news.length) parts.push(`There is not enough activity about ${name} to summarise yet.`);
   else {
-    const total = outlook(posts, "All");
-    parts.push(`${posts.length} discussions about ${name}${objectives[0] ? `, mainly members ${objectives[0].label.toLowerCase()}` : ""}.`);
-    parts.push(`Overall mood is ${total.label.toLowerCase()} (${total.bull} bullish, ${total.neutral} neutral, ${total.bear} bearish).`);
-    if (recent.total >= 2 && earlier.total >= 2) parts.push(recent.net > earlier.net + 0.12 ? "Sentiment is improving versus earlier." : recent.net < earlier.net - 0.12 ? "Sentiment is weakening versus earlier." : "Sentiment is steady.");
-    if (concerns.length) parts.push(`Members keep raising ${concerns.slice(0, 3).join(", ")}.`);
+    const counts = [posts.length && `${posts.length} ${posts.length === 1 ? "discussion" : "discussions"}`, news.length && `${news.length} news ${news.length === 1 ? "story" : "stories"}`].filter(Boolean).join(" and ");
+    parts.push(`${counts} about ${name}${objectives[0] ? `, centred on ${objectives[0].label.toLowerCase()}` : ""}.`);
+    const all = outlook(posts, "All");
+    if (all.total >= 2) parts.push(`Members are ${all.label.toLowerCase()} (${all.bull} bullish, ${all.neutral} neutral, ${all.bear} bearish).`);
+    if (newsTone) parts.push(`News sentiment is ${newsTone.label.toLowerCase()} (${newsTone.bull} positive, ${newsTone.neutral} neutral, ${newsTone.bear} negative).`);
+    if (recent.total >= 2 && earlier.total >= 2) parts.push(recent.net > earlier.net + 0.12 ? "Member sentiment is improving versus earlier." : recent.net < earlier.net - 0.12 ? "Member sentiment is weakening versus earlier." : "Member sentiment is steady.");
+    if (concerns.length) parts.push(`Recurring concerns: ${concerns.slice(0, 3).join(", ")}.`);
     if (reality) parts.push(reality.text);
     if (asks.length) parts.push(`${asks.length} open ${asks.length === 1 ? "question is" : "questions are"} waiting for answers.`);
+    if (!posts.length) parts.push("No member discussion yet, so this reflects the news only.");
   }
 
-  return { objectives, milestones, recent, earlier, reality, concerns, asks, summary: parts.join(" ") };
+  return { objectives, milestones, recent, earlier, newsTone, reality, concerns, asks, summary: parts.join(" ") };
 }

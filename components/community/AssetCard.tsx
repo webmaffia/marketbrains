@@ -13,7 +13,7 @@ export function AssetCard({ community, asset }: { community: Community; asset?: 
       <span className={s.sub}>
         {asset ? `${asset.ticker} · ${asset.exchange === "CRYPTO" ? "Crypto" : asset.exchange}` : community.kind}
       </span>
-      <span className={s.stat}>{compact(community.discussions)} posts</span>
+      {community.discussions > 0 && <span className={s.stat}>{compact(community.discussions)} posts</span>}
     </Link>
   );
 }

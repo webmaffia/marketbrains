@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: PageProps<"/community/[slug]"
   const c = await getCommunity(slug);
   if (!c) return {};
   const title = `${c.name} community`;
-  const description = `${c.tagline} Join ${c.members.toLocaleString("en-US")} members discussing ${c.name} on MarketBrains.`;
+  const description = `${c.tagline} Join the ${c.name} community on MarketBrains.`;
   return {
     title,
     description,

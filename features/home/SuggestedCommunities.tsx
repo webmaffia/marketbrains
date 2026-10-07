@@ -27,7 +27,7 @@ export function SuggestedCommunities({ communities }: { communities: Community[]
               <CommunityBadge community={c} size={36} />
               <span className={s.text}>
                 <span className={s.name}>{c.name}</span>
-                <span className={s.meta}>{compact(c.members)} members</span>
+                {c.members > 0 && <span className={s.meta}>{compact(c.members)} members</span>}
               </span>
             </Link>
             <FollowButton communitySlug={c.slug} />

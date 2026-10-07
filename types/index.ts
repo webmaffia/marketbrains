@@ -118,6 +118,16 @@ export interface NewsItem {
   url?: string;
   ageMin: number;
   discussionCount: number;
+  /** AI read of the headline, filled by the daily ingest job. */
+  analysis?: NewsAnalysis;
+}
+
+export interface NewsAnalysis {
+  /** -100 (very bearish) to +100 (very bullish). */
+  score: number;
+  tone: Stance;
+  topic: string;
+  summary: string;
 }
 
 /** Lookup tables handed to client components so they can resolve ids without importing mock data. */

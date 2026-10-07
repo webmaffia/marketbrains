@@ -39,7 +39,7 @@ insert("topics", ["slug", "name", "kind", "description"], topics.map((t) => [q(t
 insert(
   "communities",
   ["slug", "name", "kind", "region", "tagline", "hue", "members", "discussions", "asset_id", "featured", "logo_url"],
-  communities.map((c) => [q(c.slug), q(c.name), q(c.kind), q(c.region), q(c.tagline), q(c.hue), q(c.members), q(c.discussions), q(c.assetId), q(!!c.featured), q(c.logoUrl)]),
+  communities.map((c) => [q(c.slug), q(c.name), q(c.kind), q(c.region), q(c.tagline), q(c.hue), q(0), q(0), q(c.assetId), q(!!c.featured), q(c.logoUrl)]),
 );
 insert(
   "profiles",

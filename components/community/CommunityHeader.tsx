@@ -27,20 +27,22 @@ export function CommunityHeader({ community, asset, quote }: { community: Commun
           </span>
         </div>
       )}
-      <dl className={s.stats}>
-        <div>
-          <dt>Members</dt>
-          <dd>{compact(community.members)}</dd>
-        </div>
-        <div>
-          <dt>Discussions</dt>
-          <dd>{compact(community.discussions)}</dd>
-        </div>
-        <div>
-          <dt>Active now</dt>
-          <dd>{compact(Math.round(community.members * 0.014))}</dd>
-        </div>
-      </dl>
+      {(community.members > 0 || community.discussions > 0) && (
+        <dl className={s.stats}>
+          {community.members > 0 && (
+            <div>
+              <dt>Members</dt>
+              <dd>{compact(community.members)}</dd>
+            </div>
+          )}
+          {community.discussions > 0 && (
+            <div>
+              <dt>Discussions</dt>
+              <dd>{compact(community.discussions)}</dd>
+            </div>
+          )}
+        </dl>
+      )}
     </section>
   );
 }

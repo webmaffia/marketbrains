@@ -45,9 +45,11 @@ export function CommunityCard({ community, withJoin = true }: { community: Commu
         <CommunityBadge community={community} />
         <span className={s.text}>
           <span className={s.name}>{community.name}</span>
-          <span className={s.meta}>
-            {compact(community.members)} members · {compact(community.discussions)} posts
-          </span>
+          {(community.members > 0 || community.discussions > 0) && (
+            <span className={s.meta}>
+              {[community.members > 0 && `${compact(community.members)} members`, community.discussions > 0 && `${compact(community.discussions)} posts`].filter(Boolean).join(" · ")}
+            </span>
+          )}
         </span>
       </Link>
       {withJoin && <FollowButton communitySlug={community.slug} />}

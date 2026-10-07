@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { timeAgo } from "@/lib/format";
 import { buildInsights, type Outlook } from "@/lib/insights";
-import type { Post } from "@/types";
+import type { NewsItem, Post } from "@/types";
 import s from "./CommunityInsights.module.scss";
 
 const KIND_LABEL = { results: "Results", news: "News", poll: "Poll", peak: "Top", shift: "Shift", question: "Question" } as const;
@@ -27,9 +27,9 @@ function Bar({ o }: { o: Outlook }) {
 }
 
 /** Reads the discussions and turns them into goals, milestones, sentiment and a plain-language summary. */
-export function CommunityInsights({ name, posts, changePct }: { name: string; posts: Post[]; changePct?: number | null }) {
-  if (posts.length < 2) return null;
-  const i = buildInsights(name, posts, changePct);
+export function CommunityInsights({ name, posts, news, changePct }: { name: string; posts: Post[]; news: NewsItem[]; changePct?: number | null }) {
+  if (posts.length + news.length < 2) return null;
+  const i = buildInsights(name, posts, news, changePct);
 
   return (
     <section className={s.card} aria-labelledby="ci-title">
@@ -65,14 +65,15 @@ export function CommunityInsights({ name, posts, changePct }: { name: string; po
       <div className={s.block}>
         <h4>Sentiment trend</h4>
         <div className={s.pair}>
-          <Bar o={i.recent} />
-          <Bar o={i.earlier} />
+          {i.recent.total > 0 && <Bar o={i.recent} />}
+          {i.earlier.total > 0 && <Bar o={i.earlier} />}
+          {i.newsTone && <Bar o={i.newsTone} />}
         </div>
       </div>
 
       {i.reality && (
         <div className={`${s.reality} ${s[i.reality.verdict]}`}>
-          <h4>What members think vs what happened</h4>
+          <h4>What people think vs what happened</h4>
           <p>
             <strong>{i.reality.title}.</strong> {i.reality.text}
           </p>
@@ -92,7 +93,11 @@ export function CommunityInsights({ name, posts, changePct }: { name: string; po
                     <span>{m.ageMin ? timeAgo(m.ageMin) : "now"}</span>
                   </p>
                   <p className={s.mTitle}>{m.title}</p>
-                  {m.href ? (
+                  {m.href && m.external ? (
+                    <a href={m.href} target="_blank" rel="noopener noreferrer" className={s.mDetail}>
+                      {m.detail}
+                    </a>
+                  ) : m.href ? (
                     <Link href={m.href} className={s.mDetail}>
                       {m.detail}
                     </Link>
@@ -136,7 +141,7 @@ export function CommunityInsights({ name, posts, changePct }: { name: string; po
         </div>
       )}
 
-      <p className={s.fine}>Generated automatically from member posts. Opinions, not investment advice.</p>
+      <p className={s.fine}>Generated automatically from member posts and news headlines. Opinions, not investment advice.</p>
     </section>
   );
 }

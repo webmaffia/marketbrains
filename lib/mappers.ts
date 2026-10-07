@@ -105,6 +105,7 @@ export const mapNews = (r: Row): NewsItem => ({
   url: r.url ?? undefined,
   ageMin: minutesSince(r.created_at),
   discussionCount: r.discussion_count,
+  analysis: r.sentiment ? { score: r.sentiment_score ?? 0, tone: r.sentiment, topic: r.topic ?? "", summary: r.summary ?? "" } : undefined,
 });
 
 export const mapNotification = (r: Row): Notification => ({

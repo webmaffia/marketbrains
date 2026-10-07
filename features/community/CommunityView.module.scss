@@ -160,3 +160,21 @@
   font-size: 13px;
   font-weight: 650;
 }
+
+.tone_bull {
+  color: var(--bull);
+  font-weight: 700;
+}
+.tone_bear {
+  color: var(--bear);
+  font-weight: 700;
+}
+.tone_neutral {
+  font-weight: 700;
+}
+.aiNote {
+  margin-top: 4px;
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 1.4;
+}
