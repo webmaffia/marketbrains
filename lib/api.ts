@@ -3,6 +3,7 @@
  * objects. Reads are public (protected by row level security), so these run on the server
  * for pages and in the browser for per-user views alike.
  */
+import { BOT_ID } from "@/lib/bot";
 import { mapLeaderboardRow, type Period } from "@/lib/leaderboard";
 import { supabase } from "@/lib/supabase";
 import { mapAsset, mapComment, mapCommunity, mapNews, mapPost, mapTopic, mapUser, POST_SELECT, USER_SELECT } from "@/lib/mappers";
@@ -117,7 +118,7 @@ export async function getPublicContact(userId: string): Promise<PublicContact> {
 /** Ranked contributors for a period, optionally limited to one community. */
 export async function getLeaderboard(period: Period, community?: string, limit = 50): Promise<LeaderboardEntry[]> {
   const rows = check(await supabase.rpc("leaderboard", { p_period: period, p_community: community ?? null, p_limit: limit }), "the leaderboard");
-  return (rows as Record<string, unknown>[]).map(mapLeaderboardRow);
+  return (rows as Record<string, unknown>[]).map(mapLeaderboardRow).filter((r) => r.userId !== BOT_ID);
 }
 
 /** Members' one-tap views for a community (bullish / neutral / bearish). */

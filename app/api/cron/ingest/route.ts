@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { analyzeHeadlines } from "@/lib/aiNews";
+import { analyzeHeadlines, writeDiscussion } from "@/lib/aiNews";
+import { BOT_ID, BOT_PROFILE } from "@/lib/bot";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,7 +47,7 @@ async function headlines(query: string): Promise<Headline[]> {
     .slice(0, PER_COMMUNITY);
 }
 
-/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every stock and index community into the News tab, then has gpt-4o-mini rate each one. It creates no discussions. */
+/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every stock and index community into the News tab, then has gpt-4o-mini rate each one. For each community it also opens one discussion (plus a first comment) on the day's most significant story, from the labelled MarketBrains AI account. */
 export async function GET(request: Request) {
   const { CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL } = process.env;
   if (!CRON_SECRET || !SUPABASE_SERVICE_ROLE_KEY || !NEXT_PUBLIC_SUPABASE_URL) return Response.json({ error: "Not configured" }, { status: 503 });
@@ -60,6 +61,8 @@ export async function GET(request: Request) {
   let added = 0;
   let found = 0;
   let analyzed = 0;
+  let discussions = 0;
+  const discussionFailed: string[] = [];
   const failed: string[] = [];
   const analysisFailed: string[] = [];
 
@@ -83,8 +86,7 @@ export async function GET(request: Request) {
     try {
       const { data: pending, error: pendErr } = await db.from("news").select("id,headline,source").eq("community_slug", c.slug).is("analyzed_at", null).order("created_at", { ascending: false }).limit(10);
       if (pendErr) throw new Error(pendErr.message);
-      if (!pending?.length) return;
-      for (const r of await analyzeHeadlines(c.name, pending.map((p) => ({ id: p.id, headline: p.headline, source: p.source })))) {
+      for (const r of await analyzeHeadlines(c.name, pending?.length ? pending.map((p) => ({ id: p.id, headline: p.headline, source: p.source })) : [])) {
         const { error: upErr } = await db.from("news").update({ sentiment_score: r.score, sentiment: r.tone, topic: r.topic, summary: r.summary, analyzed_at: new Date().toISOString() }).eq("id", r.id);
         if (upErr) throw new Error(upErr.message);
         analyzed += 1;
@@ -92,14 +94,37 @@ export async function GET(request: Request) {
     } catch (e) {
       analysisFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
     }
+
+    // One AI discussion per community per run, about the most significant story that has none yet.
+    try {
+      const since = new Date(Date.now() - 2 * 86_400_000).toISOString();
+      const { data: recent, error: recErr } = await db.from("news").select("id,headline,summary,sentiment_score").eq("community_slug", c.slug).not("analyzed_at", "is", null).gte("created_at", since);
+      if (recErr) throw new Error(recErr.message);
+      if (!recent?.length) return;
+      const { data: used } = await db.from("posts").select("news_id").in("news_id", recent.map((r) => r.id));
+      const taken = new Set((used ?? []).map((u) => u.news_id));
+      const pick = recent.filter((r) => !taken.has(r.id) && Math.abs(r.sentiment_score ?? 0) >= 20).sort((a, b) => Math.abs(b.sentiment_score ?? 0) - Math.abs(a.sentiment_score ?? 0))[0];
+      if (!pick) return;
+      const d = await writeDiscussion(c.name, pick.headline, pick.summary);
+      const { data: post, error: postErr } = await db.from("posts").insert({ author_id: BOT_ID, community_slug: c.slug, type: "news", title: d.title, body: d.body, news_id: pick.id }).select("id").single();
+      if (postErr) throw new Error(`post: ${postErr.message}`);
+      const { error: comErr } = await db.from("comments").insert({ post_id: post.id, author_id: BOT_ID, body: d.comment });
+      if (comErr) throw new Error(`comment: ${comErr.message}`);
+      discussions += 1;
+    } catch (e) {
+      discussionFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
+    }
   };
 
   // 50+ communities: work through them a few at a time so the job finishes inside the time limit.
+  // The labelled account behind the AI discussions. Never touches an existing profile.
+  if (process.env.OPENAI_API_KEY) await db.from("profiles").upsert(BOT_PROFILE, { onConflict: "id", ignoreDuplicates: true });
+
   const queue = [...(communities ?? [])];
   await Promise.all(
     Array.from({ length: 8 }, async () => {
       for (let c = queue.shift(); c; c = queue.shift()) await run(c);
     }),
   );
-  return Response.json({ added, found, analyzed, communities: communities?.length ?? 0, aiEnabled: !!process.env.OPENAI_API_KEY, failed, analysisFailed });
+  return Response.json({ added, found, analyzed, discussions, communities: communities?.length ?? 0, aiEnabled: !!process.env.OPENAI_API_KEY, failed, analysisFailed, discussionFailed });
 }
