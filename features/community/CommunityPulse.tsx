@@ -37,7 +37,12 @@ export function CommunityPulse({ slug, name, base }: { slug: string; name: strin
   const [mine, setMine] = useState<Stance3 | null>(null);
 
   // Take the server's numbers again whenever the page is refreshed with new ones.
-  useEffect(() => setCounts({ bull: base.bull, bear: base.bear, neutral: base.neutral }), [base.bull, base.bear, base.neutral]);
+  const baseKey = `${base.bull}-${base.bear}-${base.neutral}`;
+  const [seenKey, setSeenKey] = useState(baseKey);
+  if (seenKey !== baseKey) {
+    setSeenKey(baseKey);
+    setCounts({ bull: base.bull, bear: base.bear, neutral: base.neutral });
+  }
 
   // The member's existing view is already inside the server's counts; this only highlights it.
   useEffect(() => {

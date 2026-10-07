@@ -32,6 +32,8 @@ export interface Asset {
   sector: string;
   about: string;
   themes: string[];
+  /** Yahoo Finance symbol when it differs from the ticker + exchange default, e.g. ^NSEI. */
+  priceSymbol?: string;
 }
 
 export type TopicKind = "sector" | "theme" | "topic";

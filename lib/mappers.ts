@@ -52,6 +52,7 @@ export const mapAsset = (r: Row): Asset => ({
   sector: r.sector,
   about: r.about,
   themes: r.themes ?? [],
+  priceSymbol: r.price_symbol ?? undefined,
 });
 
 export const mapTopic = (r: Row): Topic => ({ slug: r.slug, name: r.name, kind: r.kind, description: r.description });

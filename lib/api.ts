@@ -64,6 +64,11 @@ export async function getPost(id: string): Promise<Post | undefined> {
   return row ? mapPost(row) : undefined;
 }
 
+export async function getPostsByIds(ids: string[]): Promise<Post[]> {
+  if (!ids.length) return [];
+  return check(await postsQuery().in("id", ids.slice(0, FEED_LIMIT)), "saved posts").map(mapPost);
+}
+
 export async function getPolls(): Promise<Post[]> {
   const rows = check(await supabase.from("posts").select(POST_SELECT.replace("poll:polls(", "poll:polls!inner(")).order("created_at", { ascending: false }).limit(FEED_LIMIT), "polls");
   return rows.map(mapPost);

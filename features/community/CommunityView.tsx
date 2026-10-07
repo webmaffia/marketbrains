@@ -106,12 +106,16 @@ export function CommunityView({ community, asset, quote, sentiment, leaders, pos
             <>
               <h3>Sector</h3>
               <p>{asset.sector}</p>
-              <h3>What members discuss</h3>
-              <ul className={s.themes}>
-                {asset.themes.map((t) => (
-                  <li key={t}>{t}</li>
-                ))}
-              </ul>
+              {asset.themes.length > 0 && (
+                <>
+                  <h3>What members discuss</h3>
+                  <ul className={s.themes}>
+                    {asset.themes.map((t) => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </>
           )}
         </section>

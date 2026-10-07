@@ -14,6 +14,7 @@ export interface Quote {
  * provider before relying on it. Every price shown in the UI is labelled as delayed.
  */
 function symbolFor(a: Asset): string {
+  if (a.priceSymbol) return a.priceSymbol;
   switch (a.exchange) {
     case "NSE":
       return `${a.ticker}.NS`;

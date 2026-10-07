@@ -46,7 +46,7 @@ async function headlines(query: string): Promise<Headline[]> {
     .slice(0, PER_COMMUNITY);
 }
 
-/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every asset community into the News tab, then has gpt-5-mini rate each one. It creates no discussions. */
+/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every stock and index community into the News tab, then has gpt-5-mini rate each one. It creates no discussions. */
 export async function GET(request: Request) {
   const { CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL } = process.env;
   if (!CRON_SECRET || !SUPABASE_SERVICE_ROLE_KEY || !NEXT_PUBLIC_SUPABASE_URL) return Response.json({ error: "Not configured" }, { status: 503 });
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
   const db = createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
-  const { data: communities, error } = await db.from("communities").select("slug,name").eq("kind", "asset");
+  const { data: communities, error } = await db.from("communities").select("slug,name,kind").in("kind", ["asset", "market"]);
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   let added = 0;
@@ -62,26 +62,28 @@ export async function GET(request: Request) {
   let analyzed = 0;
   const failed: string[] = [];
   const analysisFailed: string[] = [];
-  for (const c of communities ?? []) {
+
+  const run = async (c: { slug: string; name: string; kind: string }) => {
+    // "Eternal (Zomato)" searches as "Eternal stock"; the extra word keeps short names from matching unrelated news.
+    const query = c.kind === "asset" ? `${c.name.replace(/\s*\(.*?\)/g, "")} stock` : c.name;
     try {
-      for (const h of await headlines(c.name)) {
+      for (const h of await headlines(query)) {
         found += 1;
         const id = "gn-" + createHash("sha1").update(h.url).digest("hex").slice(0, 16);
         const { data: fresh, error: newsErr } = await db.from("news").upsert({ id, community_slug: c.slug, source: h.source, headline: h.title, url: h.url }, { onConflict: "id", ignoreDuplicates: true }).select("id");
         if (newsErr) throw new Error(`news: ${newsErr.message}`);
-        if (!fresh?.length) continue;
-        added += 1;
+        if (fresh?.length) added += 1;
       }
     } catch (e) {
       failed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
     }
 
     // AI read of any headline that has not been analysed yet (also backfills older ones).
-    if (!process.env.OPENAI_API_KEY) continue;
+    if (!process.env.OPENAI_API_KEY) return;
     try {
       const { data: pending, error: pendErr } = await db.from("news").select("id,headline,source").eq("community_slug", c.slug).is("analyzed_at", null).order("created_at", { ascending: false }).limit(10);
       if (pendErr) throw new Error(pendErr.message);
-      if (!pending?.length) continue;
+      if (!pending?.length) return;
       for (const r of await analyzeHeadlines(c.name, pending.map((p) => ({ id: p.id, headline: p.headline, source: p.source })))) {
         const { error: upErr } = await db.from("news").update({ sentiment_score: r.score, sentiment: r.tone, topic: r.topic, summary: r.summary, analyzed_at: new Date().toISOString() }).eq("id", r.id);
         if (upErr) throw new Error(upErr.message);
@@ -90,6 +92,14 @@ export async function GET(request: Request) {
     } catch (e) {
       analysisFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
     }
-  }
+  };
+
+  // 50+ communities: work through them a few at a time so the job finishes inside the time limit.
+  const queue = [...(communities ?? [])];
+  await Promise.all(
+    Array.from({ length: 8 }, async () => {
+      for (let c = queue.shift(); c; c = queue.shift()) await run(c);
+    }),
+  );
   return Response.json({ added, found, analyzed, communities: communities?.length ?? 0, aiEnabled: !!process.env.OPENAI_API_KEY, failed, analysisFailed });
 }

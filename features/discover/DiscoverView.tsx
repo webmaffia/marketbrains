@@ -7,41 +7,39 @@ import { TopicChip } from "@/components/ui/TopicChip";
 import type { Asset, Community } from "@/types";
 import s from "./DiscoverView.module.scss";
 
-type Filter = "all" | "india" | "us" | "crypto" | "sectors" | "themes" | "topics";
-const filters: { id: Filter; label: string }[] = [
+type Filter = "all" | "indices" | "stocks" | "sectors" | "themes" | "topics";
+const filters: { id: Filter; label: string; kind?: Community["kind"] }[] = [
   { id: "all", label: "All" },
-  { id: "india", label: "India" },
-  { id: "us", label: "US" },
-  { id: "crypto", label: "Crypto" },
-  { id: "sectors", label: "Sectors" },
-  { id: "themes", label: "Themes" },
-  { id: "topics", label: "Topics" },
+  { id: "indices", label: "Indices", kind: "market" },
+  { id: "stocks", label: "Stocks", kind: "asset" },
+  { id: "sectors", label: "Sectors", kind: "sector" },
+  { id: "themes", label: "Themes", kind: "theme" },
+  { id: "topics", label: "Topics", kind: "topic" },
 ];
-
-const KIND_FOR: Partial<Record<Filter, Community["kind"]>> = { sectors: "sector", themes: "theme", topics: "topic" };
 
 export function DiscoverView({ communities, assets }: { communities: Community[]; assets: Asset[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const assetMap = Object.fromEntries(assets.map((a) => [a.id, a]));
 
-  const filtered = communities.filter((c) => {
-    if (filter === "all") return true;
-    if (filter === "india" || filter === "us" || filter === "crypto") return c.region === filter;
-    return c.kind === KIND_FOR[filter];
-  });
+  // Only offer filters that have something in them, so admins adding a new kind makes its chip appear.
+  const available = filters.filter((f) => f.id === "all" || communities.some((c) => c.kind === f.kind));
+  const active = available.some((f) => f.id === filter) ? filter : "all";
+  const kind = filters.find((f) => f.id === active)?.kind;
+
+  const filtered = communities.filter((c) => !kind || c.kind === kind);
   const featured = communities.filter((c) => c.featured);
-  const exchanges = filtered.filter((c) => c.kind === "market");
-  const rest = filtered.filter((c) => c.kind !== "market");
+  const indices = active === "all" ? filtered.filter((c) => c.kind === "market") : [];
+  const rest = active === "all" ? filtered.filter((c) => c.kind !== "market") : filtered;
 
   return (
     <>
       <div className={`${s.chips} hide-scrollbar`} role="group" aria-label="Filter communities">
-        {filters.map((f) => (
-          <TopicChip key={f.id} label={f.label} active={filter === f.id} onClick={() => setFilter(f.id)} />
+        {available.map((f) => (
+          <TopicChip key={f.id} label={f.label} active={active === f.id} onClick={() => setFilter(f.id)} />
         ))}
       </div>
 
-      {filter === "all" && (
+      {active === "all" && featured.length > 0 && (
         <section aria-labelledby="pop">
           <h2 id="pop" className={s.h}>
             Popular communities
@@ -54,13 +52,13 @@ export function DiscoverView({ communities, assets }: { communities: Community[]
         </section>
       )}
 
-      {exchanges.length > 0 && (
+      {indices.length > 0 && (
         <section aria-labelledby="ex">
           <h2 id="ex" className={s.h}>
-            Exchanges
+            Indices
           </h2>
           <div className={s.group}>
-            {exchanges.map((c) => (
+            {indices.map((c) => (
               <CommunityCard key={c.slug} community={c} />
             ))}
           </div>
@@ -69,7 +67,7 @@ export function DiscoverView({ communities, assets }: { communities: Community[]
 
       <section aria-labelledby="all-c">
         <h2 id="all-c" className={s.h}>
-          {filter === "all" ? "All communities" : filters.find((f) => f.id === filter)?.label}
+          {active === "all" ? "All communities" : filters.find((f) => f.id === active)?.label}
         </h2>
         <div className={s.group}>
           {rest.map((c) => (

@@ -65,11 +65,12 @@ export function MyProfile({ communities, dir }: Props) {
     <>
       <UserProfile user={profile} posts={posts} communities={communities} dir={dir} isSelf />
       <div className={s.menu}>
-        <div className={s.row}>
+        <Link href="/profile/saved" className={s.row}>
           <Icon name="bookmark" size={20} />
           <span>Saved posts</span>
           <span className={s.val}>{saved.length}</span>
-        </div>
+          <Icon name="chevron" size={18} />
+        </Link>
         <Link href="/leaderboard" className={s.row}>
           <Icon name="trophy" size={20} />
           <span>Leaderboard</span>
@@ -83,11 +84,18 @@ export function MyProfile({ communities, dir }: Props) {
         <PushToggle />
         <ThemeToggle />
         {profile.isAdmin && (
-          <Link href="/admin/news" className={s.row}>
-            <Icon name="sparkle" size={20} />
-            <span>Manage news</span>
-            <Icon name="chevron" size={18} />
-          </Link>
+          <>
+            <Link href="/admin/communities" className={s.row}>
+              <Icon name="users" size={20} />
+              <span>Manage communities</span>
+              <Icon name="chevron" size={18} />
+            </Link>
+            <Link href="/admin/news" className={s.row}>
+              <Icon name="sparkle" size={20} />
+              <span>Manage news</span>
+              <Icon name="chevron" size={18} />
+            </Link>
+          </>
         )}
         {session?.plan !== "pro" && (
           <button type="button" className={s.row} onClick={upgrade}>

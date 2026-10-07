@@ -71,10 +71,19 @@ export function buildMixedFeed(posts: Post[], communities: Community[], news: Ne
   const sentiments = communitySentiments(posts, communities);
   // Scale how many extra cards get pulled in to the feed length, so a short feed doesn't end in
   // a pile of leftover suggestion/sentiment/news cards with nowhere left to go.
-  const budget = Math.max(1, Math.floor(posts.length / 4));
+  const budget = posts.length < 6 ? 4 : Math.max(1, Math.floor(posts.length / 4));
   const extras = buildExtras(communities, sentiments, news, budget);
 
   const items: FeedItem[] = [];
+
+  // A young community has few posts, so lead with the day's news instead of burying it at the tail.
+  if (posts.length < 6) {
+    const lead = extras.filter((e) => e.kind === "news");
+    const rest = extras.filter((e) => e.kind !== "news");
+    items.push(...lead, ...posts.map((post): FeedItem => ({ key: `post-${post.id}`, kind: "post", post })), ...rest);
+    return items;
+  }
+
   let extraI = 0;
   let sincePlaced = 0; // posts placed since the last extra card
 

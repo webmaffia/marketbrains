@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CommunityBadge } from "@/components/community/CommunityCard";
 import { Icon } from "@/components/ui/Icon";
+import { SocialIcon } from "@/components/ui/SocialIcon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useState } from "react";
 import { PostList } from "@/components/post/PostList";
@@ -94,8 +95,8 @@ export function UserProfile({ user, posts, communities, dir, isSelf: selfProp, c
               <ul className={s.socials}>
                 {socials.map(([k, v]) => (
                   <li key={k}>
-                    <a href={v} target="_blank" rel="noopener noreferrer nofollow ugc">
-                      {SOCIAL_LABELS[k]}
+                    <a href={v} target="_blank" rel="noopener noreferrer nofollow ugc" aria-label={SOCIAL_LABELS[k]} title={SOCIAL_LABELS[k]}>
+                      <SocialIcon name={k} size={18} />
                     </a>
                   </li>
                 ))}
