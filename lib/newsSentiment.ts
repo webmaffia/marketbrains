@@ -91,7 +91,8 @@ export interface NewsMeter {
 const moodLabel = (v: number) => (v > 0.45 ? "Very bullish" : v > 0.15 ? "Leaning bullish" : v < -0.45 ? "Very bearish" : v < -0.15 ? "Leaning bearish" : "Mixed");
 
 /** Reads every headline, weights fresher ones more (half-life 12h) and returns one meter value. */
-export function buildNewsMeter(news: NewsItem[]): NewsMeter | null {
+export function buildNewsMeter(all: NewsItem[], maxAgeMin?: number): NewsMeter | null {
+  const news = maxAgeMin ? all.filter((n) => n.ageMin <= maxAgeMin) : all;
   if (news.length < 2) return null;
   const items = news.map(scoreHeadline);
   let num = 0;
@@ -115,3 +116,13 @@ export function buildNewsMeter(news: NewsItem[]): NewsMeter | null {
   return { value, label: moodLabel(value), confidence, bull, bear, neutral, total: items.length, items, drivers, themes, aiCount: items.filter((i) => i.ai).length };
 }
 
+
+export const TODAY_MIN = 24 * 60;
+export const WEEK_MIN = 7 * 24 * 60;
+
+/** The two windows shown on the meter. Either is null when it has fewer than two stories. */
+export interface NewsMeters {
+  today: NewsMeter | null;
+  week: NewsMeter | null;
+}
+export const buildNewsMeters = (news: NewsItem[]): NewsMeters => ({ today: buildNewsMeter(news, TODAY_MIN), week: buildNewsMeter(news, WEEK_MIN) });

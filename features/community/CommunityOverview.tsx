@@ -5,7 +5,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { compact } from "@/lib/format";
 import type { Community, LeaderboardEntry, NewsItem, Post, SentimentCounts } from "@/types";
 import { CommunityInsights } from "./CommunityInsights";
-import { buildNewsMeter } from "@/lib/newsSentiment";
+import { buildNewsMeters } from "@/lib/newsSentiment";
 import { CommunityPulse } from "./CommunityPulse";
 import { NewsMeter } from "./NewsMeter";
 import s from "./CommunityOverview.module.scss";
@@ -30,7 +30,7 @@ export function CommunityOverview({ community, posts, sentiment, leaders, news, 
   const thisWeek = posts.filter((p) => p.ageMin <= WEEK_MIN).length;
   const trending = [...posts].sort((a, b) => engagement(b) / (1 + b.ageMin / 240) - engagement(a) / (1 + a.ageMin / 240)).slice(0, 3);
 
-  const newsMeter = buildNewsMeter(news);
+  const newsMeters = buildNewsMeters(news);
   const livePolls = posts.filter((p) => p.poll).length;
   const stats = (
     [
@@ -46,7 +46,7 @@ export function CommunityOverview({ community, posts, sentiment, leaders, news, 
     <div className={s.wrap}>
       <CommunityPulse slug={community.slug} name={community.name} base={sentiment} />
 
-      {newsMeter && <NewsMeter meter={newsMeter} name={community.name} />}
+      <NewsMeter meters={newsMeters} name={community.name} />
 
       <CommunityInsights name={community.name} posts={posts} news={news} changePct={changePct} />
 

@@ -96,6 +96,12 @@ export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
   return row ? mapNews(row) : undefined;
 }
 
+/** Everything published in the last `days` days, across all communities (for the market-wide meter). */
+export async function getNewsSince(days: number): Promise<NewsItem[]> {
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  return check(await supabase.from("news").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(1000), "news").map(mapNews);
+}
+
 export async function getAllNews(): Promise<NewsItem[]> {
   return check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(30), "news").map(mapNews);
 }

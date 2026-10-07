@@ -1,5 +1,5 @@
 import type { NewsItem, Post, Stance } from "@/types";
-import { buildNewsMeter } from "@/lib/newsSentiment";
+import { buildNewsMeter, WEEK_MIN } from "@/lib/newsSentiment";
 
 /** Sections built from community data stay hidden until there is at least this much to read. */
 export const MIN_DATA = 10;
@@ -82,7 +82,7 @@ function outlook(posts: Post[], window: string): Outlook {
 
 /** Headline tone, from the same news meter shown on the News tab. */
 function headlineTone(news: NewsItem[]): Outlook | null {
-  const m = buildNewsMeter(news);
+  const m = buildNewsMeter(news, WEEK_MIN);
   if (!m) return null;
   return { window: "News headlines", net: m.value, bull: m.bull, bear: m.bear, neutral: m.neutral, total: m.total, label: m.label };
 }

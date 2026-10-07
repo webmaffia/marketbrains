@@ -3,16 +3,16 @@ import { HomeFeed } from "@/features/home/HomeFeed";
 import { WelcomeGate } from "@/features/welcome/welcomeGate";
 import { HomeHeader } from "@/features/home/HomeHeader";
 import { NewsMeter } from "@/features/community/NewsMeter";
-import { getAllNews, getCommunities, getPosts } from "@/lib/api";
+import { getAllNews, getCommunities, getNewsSince, getPosts } from "@/lib/api";
 import { getDirectory } from "@/lib/directory";
-import { buildNewsMeter } from "@/lib/newsSentiment";
+import { buildNewsMeters } from "@/lib/newsSentiment";
 
 export default async function HomePage() {
-  const [posts, dir, communities, news] = await Promise.all([getPosts(), getDirectory(), getCommunities(), getAllNews()]);
+  const [posts, dir, communities, news, recentNews] = await Promise.all([getPosts(), getDirectory(), getCommunities(), getAllNews(), getNewsSince(7)]);
 
   // Everything on the banner comes from real data: the most discussed post (if anyone has reacted yet) and today's news mood.
   const top = [...posts].filter((p) => p.likes + p.comments > 0).sort((a, b) => b.likes + b.comments * 2 - (a.likes + a.comments * 2))[0];
-  const meter = buildNewsMeter(news);
+  const meters = buildNewsMeters(recentNews);
 
   return (
     <>
@@ -35,7 +35,7 @@ export default async function HomePage() {
                 cta={{ label: "Join the discussion", href: `/community/${top.communitySlug}/post/${top.id}` }}
               />
             )}
-            {meter && <NewsMeter meter={meter} name="Market" />}
+            <NewsMeter meters={meters} name="Market" />
           </>
         }
       />

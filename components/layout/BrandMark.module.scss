@@ -2,3 +2,13 @@
   width: auto;
   flex: none;
 }
+
+// The logo is a dark mark, so turn it white wherever dark mode applies (chosen, or the system setting when none is chosen).
+:global(:root[data-theme="dark"]) .logo {
+  filter: brightness(0) invert(1);
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .logo {
+    filter: brightness(0) invert(1);
+  }
+}

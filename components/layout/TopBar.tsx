@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { BackButton } from "./BackButton";
-import { BrandMark } from "./BrandMark";
 import s from "./TopBar.module.scss";
 
 interface Props {
@@ -16,7 +15,7 @@ export function TopBar({ title, back, fallbackHref = "/", left, right, children 
   return (
     <header className={s.bar}>
       <div className={s.row}>
-        <div className={s.side}>{back ? <BackButton fallbackHref={fallbackHref} /> : (left ?? <BrandMark size={16} />)}</div>
+        <div className={s.side}>{back ? <BackButton fallbackHref={fallbackHref} /> : left}</div>
         <h1 className={s.title}>{children ?? title}</h1>
         <div className={`${s.side} ${s.end}`}>{right}</div>
       </div>

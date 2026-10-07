@@ -1,5 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { timeAgo } from "@/lib/format";
-import type { NewsMeter as Meter } from "@/lib/newsSentiment";
+import type { NewsMeter as Meter, NewsMeters } from "@/lib/newsSentiment";
 import s from "./NewsMeter.module.scss";
 
 const W = 220;
@@ -11,10 +14,26 @@ const ARC = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`;
 
 const TONE_LABEL = { bull: "Positive", bear: "Negative", neutral: "Neutral" } as const;
 
-/** Semicircle meter for the tone of today's news, with the headlines that move it. */
-export function NewsMeter({ meter, name }: { meter: Meter; name: string }) {
+type Range = "today" | "week";
+const RANGES: { id: Range; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "week", label: "7 days" },
+];
+
+/** Semicircle meter for the tone of the news, switchable between today and the last 7 days. Hidden until a window has two stories. */
+export function NewsMeter({ meters, name }: { meters: NewsMeters; name: string }) {
+  const [range, setRange] = useState<Range>("today");
+  if (!meters.today && !meters.week) return null;
+  // Fall back to whichever window has data, so a quiet day still shows the week.
+  const active: Range = meters[range] ? range : range === "today" ? "week" : "today";
+  const meter = meters[active];
+  if (!meter) return null;
+  return <Gauge meter={meter} name={name} range={active} setRange={setRange} available={{ today: !!meters.today, week: !!meters.week }} />;
+}
+
+function Gauge({ meter, name, range, setRange, available }: { meter: Meter; name: string; range: Range; setRange: (r: Range) => void; available: Record<Range, boolean> }) {
   const angle = -90 + ((meter.value + 1) / 2) * 180;
-  const gradId = `news-${name.replace(/\W/g, "")}`;
+  const gradId = `news-${name.replace(/\W/g, "")}-${range}`;
   const pct = (n: number) => Math.round((n / meter.total) * 100);
   const score = Math.round(meter.value * 100);
 
@@ -25,6 +44,13 @@ export function NewsMeter({ meter, name }: { meter: Meter; name: string }) {
         <span className={s.count}>
           {meter.total} stories · {meter.confidence} confidence
         </span>
+      </div>
+      <div className={s.range} role="group" aria-label="Time range">
+        {RANGES.map((r) => (
+          <button key={r.id} type="button" className={r.id === range ? s.on : undefined} aria-pressed={r.id === range} disabled={!available[r.id]} onClick={() => setRange(r.id)}>
+            {r.label}
+          </button>
+        ))}
       </div>
 
       <div className={s.gauge} role="img" aria-label={`${meter.label}: ${pct(meter.bull)}% positive, ${pct(meter.neutral)}% neutral, ${pct(meter.bear)}% negative`}>
