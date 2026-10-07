@@ -33,7 +33,7 @@ export function CommunityView({ community, asset, quote, sentiment, leaders, pos
   const panels = {
     discussions: (
       <>
-        <CommunityOverview community={community} posts={posts} sentiment={sentiment} leaders={leaders} />
+        <CommunityOverview community={community} posts={posts} sentiment={sentiment} leaders={leaders} changePct={quote?.changePct} />
         <PostList
           posts={posts}
           dir={dir}
