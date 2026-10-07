@@ -1,4 +1,4 @@
-const MODEL = "gpt-5-mini-2025-08-07";
+const MODEL = "gpt-4o-mini";
 
 export const TOPICS = ["Regulation", "Earnings", "Partnership", "Security", "Adoption", "Price move", "Legal", "Macro", "Product", "Other"] as const;
 
@@ -51,7 +51,7 @@ const SCHEMA = {
   },
 } as const;
 
-/** One gpt-5-mini call for all of a community's headlines. Throws on any API or parsing failure. */
+/** One gpt-4o-mini call for all of a community's headlines. Throws on any API or parsing failure. */
 export async function analyzeHeadlines(assetName: string, items: HeadlineIn[]): Promise<HeadlineOut[]> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("OPENAI_API_KEY is not set");
@@ -62,8 +62,8 @@ export async function analyzeHeadlines(assetName: string, items: HeadlineIn[]): 
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
-      reasoning_effort: "minimal",
-      max_completion_tokens: 4000,
+      temperature: 0.2,
+      max_tokens: 2000,
       response_format: { type: "json_schema", json_schema: SCHEMA },
       messages: [
         { role: "system", content: SYSTEM },

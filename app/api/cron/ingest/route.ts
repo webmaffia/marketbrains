@@ -46,7 +46,7 @@ async function headlines(query: string): Promise<Headline[]> {
     .slice(0, PER_COMMUNITY);
 }
 
-/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every stock and index community into the News tab, then has gpt-5-mini rate each one. It creates no discussions. */
+/** Daily job (Vercel Cron, see vercel.json): pulls real headlines for every stock and index community into the News tab, then has gpt-4o-mini rate each one. It creates no discussions. */
 export async function GET(request: Request) {
   const { CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL } = process.env;
   if (!CRON_SECRET || !SUPABASE_SERVICE_ROLE_KEY || !NEXT_PUBLIC_SUPABASE_URL) return Response.json({ error: "Not configured" }, { status: 503 });
