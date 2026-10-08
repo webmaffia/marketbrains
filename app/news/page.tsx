@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TopBar } from "@/components/layout/TopBar";
+import { LangToggle } from "@/components/ui/Localized";
 import { NewsFeed } from "@/features/news/NewsFeed";
 import { getCommunities, getNewsFeed } from "@/lib/api";
 
@@ -11,7 +12,7 @@ export default async function NewsPage() {
   const marketSlugs = communities.filter((c) => c.kind === "market").map((c) => c.slug);
   return (
     <>
-      <TopBar title="News" />
+      <TopBar title="News" right={<LangToggle />} />
       <NewsFeed entries={entries} names={names} marketSlugs={marketSlugs} />
     </>
   );

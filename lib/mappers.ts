@@ -115,6 +115,7 @@ export const mapNews = (r: Row): NewsItem => ({
         keyPoints: r.key_points ?? [],
         basis: r.summary_basis ?? undefined,
         whyItMatters: r.why_it_matters ?? [],
+        hi: r.summary_hi ? { headline: r.title_hi ?? r.headline, summary: r.summary_hi, keyPoints: r.key_points_hi ?? [], whyItMatters: r.why_it_matters_hi ?? [] } : undefined,
         eventType: r.event_type ?? "Other",
         direction: r.impact_direction ?? "neutral",
         strength: r.impact_strength ?? "low",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { L, LList } from "@/components/ui/Localized";
 import { timeAgo } from "@/lib/format";
 import type { NewsEntry } from "@/lib/api";
 import { AffectedStocks, EventSignal, InvestorSentiment, SectorChips } from "./NewsParts";
@@ -23,19 +24,21 @@ export function NewsCard({ entry, communityName }: { entry: NewsEntry; community
       </p>
 
       <h2 className={s.headline}>
-        <Link href={`/news/${news.id}`}>{news.headline}</Link>
+        <Link href={`/news/${news.id}`}>
+          <L en={news.headline} hi={intel?.hi?.headline} />
+        </Link>
       </h2>
 
       {intel ? (
         <>
-          <p className={s.summary}>{intel.summary}</p>
+          <p className={s.summary}>
+            <L en={intel.summary} hi={intel.hi?.summary} />
+          </p>
           <div className={s.why}>
-            <h3>Why it matters</h3>
-            <ul>
-              {intel.whyItMatters.slice(0, 3).map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
+            <h3>
+              <L en="Why it matters" hi="यह क्यों मायने रखता है" />
+            </h3>
+            <LList en={intel.whyItMatters.slice(0, 3)} hi={intel.hi?.whyItMatters.slice(0, 3)} />
           </div>
           {intel.stocks.length > 0 && (
             <div>

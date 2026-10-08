@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { PollCard } from "@/components/post/PollCard";
+import { L, LList, LangToggle } from "@/components/ui/Localized";
 import { AffectedStocks, DISCLAIMER, EventSignal, InvestorSentiment, SectorChips } from "@/features/news/NewsParts";
 import { getAsset, getCommunity, getNews, getNewsEntry } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
@@ -32,7 +33,7 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
 
   return (
     <>
-      <TopBar title="News" back fallbackHref="/news" />
+      <TopBar title="News" back fallbackHref="/news" right={<LangToggle />} />
       <article className={s.wrap}>
         <p className={s.meta}>
           {news.source} · {timeAgo(news.ageMin)}
@@ -43,30 +44,33 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
             </>
           )}
         </p>
-        <h1 className={s.h1}>{news.headline}</h1>
-        {intel ? <p className={s.summary}>{intel.summary}</p> : news.analysis?.summary && <p className={s.summary}>{news.analysis.summary}</p>}
+        <h1 className={s.h1}>
+          <L en={news.headline} hi={intel?.hi?.headline} />
+        </h1>
+        {intel ? (
+          <p className={s.summary}>
+            <L en={intel.summary} hi={intel.hi?.summary} />
+          </p>
+        ) : ( news.analysis?.summary && <p className={s.summary}>{news.analysis.summary}</p>
+        )}
         {intel?.basis && intel.basis !== "article" && <p className={s.note}>{intel.basis === "snippet" ? "This summary is based on the short description the source gives. Open the original for the full story." : "This summary is based on the headline only. Open the original for the full story."}</p>}
 
         {intel && intel.keyPoints.length > 0 && (
           <section>
-            <h2>Key points</h2>
-            <ul className={s.list}>
-              {intel.keyPoints.map((k) => (
-                <li key={k}>{k}</li>
-              ))}
-            </ul>
+            <h2>
+              <L en="Key points" hi="मुख्य बातें" />
+            </h2>
+            <LList className={s.list} en={intel.keyPoints} hi={intel.hi?.keyPoints} />
           </section>
         )}
 
         {intel && (
           <>
             <section>
-              <h2>Why it matters</h2>
-              <ul className={s.list}>
-                {intel.whyItMatters.map((w) => (
-                  <li key={w}>{w}</li>
-                ))}
-              </ul>
+              <h2>
+                <L en="Why it matters" hi="यह क्यों मायने रखता है" />
+              </h2>
+              <LList className={s.list} en={intel.whyItMatters} hi={intel.hi?.whyItMatters} />
             </section>
 
             <section>

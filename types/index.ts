@@ -150,6 +150,8 @@ export interface NewsIntel {
   /** What the summary was written from: the article, its short description, or the headline alone. */
   basis?: "article" | "snippet" | "headline";
   whyItMatters: string[];
+  /** The same story in Hindi, when it has been translated. */
+  hi?: { headline: string; summary: string; keyPoints: string[]; whyItMatters: string[] };
   eventType: string;
   direction: "positive" | "negative" | "neutral" | "mixed";
   strength: "low" | "medium" | "high";

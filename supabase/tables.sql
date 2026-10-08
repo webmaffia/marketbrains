@@ -264,3 +264,10 @@ alter table public.news add column if not exists key_points      text[] not null
 alter table public.news add column if not exists summary_basis   text check (summary_basis in ('article', 'snippet', 'headline'));
 alter table public.news add column if not exists hidden          boolean not null default false;
 create index if not exists news_hidden_idx on public.news (hidden) where hidden;
+
+-- Hindi version of each story: headline, summary, key points and why it matters.
+alter table public.news add column if not exists title_hi          text;
+alter table public.news add column if not exists summary_hi        text;
+alter table public.news add column if not exists key_points_hi     text[] not null default '{}';
+alter table public.news add column if not exists why_it_matters_hi text[] not null default '{}';
+alter table public.news add column if not exists translated_at     timestamptz;

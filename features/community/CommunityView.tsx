@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { CommunityTabs } from "@/components/community/CommunityTabs";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { L } from "@/components/ui/Localized";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { FollowButton } from "@/components/user/FollowButton";
 import { timeAgo } from "@/lib/format";
@@ -40,9 +41,15 @@ export function CommunityView({ community, asset, quote, sentiment, news, member
                     {h.events.length > 0 && ` · ${h.events.join(", ")}`}
                   </p>
                   <p className={s.headline}>
-                    <Link href={`/news/${n.id}`}>{n.headline}</Link>
+                    <Link href={`/news/${n.id}`}>
+                      <L en={n.headline} hi={n.intel?.hi?.headline} />
+                    </Link>
                   </p>
-                  {text && <p className={s.aiNote}>{text}</p>}
+                  {text && (
+                    <p className={s.aiNote}>
+                      <L en={text} hi={n.intel?.hi?.summary} />
+                    </p>
+                  )}
                   {n.sources && n.sources.length > 1 && <p className={s.disc}>Covered by {n.sources.length} sources</p>}
                 </li>
               );

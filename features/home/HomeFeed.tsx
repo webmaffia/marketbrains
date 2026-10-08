@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SegmentTabs } from "@/components/ui/SegmentTabs";
+import { L } from "@/components/ui/Localized";
 import { AffectedStocks } from "@/features/news/NewsParts";
 import { timeAgo } from "@/lib/format";
 import { scoreHeadline } from "@/lib/newsSentiment";
@@ -47,14 +48,20 @@ const Slide = memo(function Slide({ n, tone, name }: { n: NewsItem; tone: "bull"
         <div className={s.body}>
           <h2 className={s.headline}>
             <Link href={`/news/${n.id}`} className={s.open}>
-              {n.headline}
+              <L en={n.headline} hi={n.intel?.hi?.headline} />
             </Link>
           </h2>
-          {text && <p className={s.text}>{text}</p>}
+          {text && (
+            <p className={s.text}>
+              <L en={text} hi={n.intel?.hi?.summary} />
+            </p>
+          )}
           {n.intel && n.intel.stocks.length > 0 && <AffectedStocks stocks={n.intel.stocks} limit={3} />}
         </div>
         <p className={s.foot}>
-          <span>Read more</span>
+          <span>
+            <L en="Read more" hi="और पढ़ें" />
+          </span>
           {n.url && (
             <a href={n.url} target="_blank" rel="noopener noreferrer nofollow">
               {n.source} →

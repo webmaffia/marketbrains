@@ -4,6 +4,7 @@ import { analyzeHeadlines } from "@/lib/aiNews";
 import { fetchArticle } from "@/lib/articleText";
 import { BOT_ID, BOT_PROFILE } from "@/lib/bot";
 import { isGenericHeadline } from "@/lib/newsFilter";
+import { translateStories } from "@/lib/translate";
 import { enrichHeadlines, findDuplicate, type Enriched, type KnownStock } from "@/lib/newsIntel";
 
 export const runtime = "nodejs";
@@ -14,6 +15,8 @@ const PER_COMMUNITY = 3;
 const MAX_ENRICH_ATTEMPTS = 3;
 const ENRICH_PER_RUN = 6;
 const ENRICH_BATCH = 3;
+const TRANSLATE_PER_RUN = 9;
+const TRANSLATE_BATCH = 3;
 const POLL_DAYS = 7;
 const MAX_NEW_POLLS = 6;
 
@@ -105,14 +108,15 @@ export async function GET(request: Request) {
   const known: KnownStock[] = (assets ?? []).filter((a) => a.asset_id && tickerOf.has(a.asset_id)).map((a) => ({ ticker: tickerOf.get(a.asset_id)!, name: a.name, slug: a.slug }));
 
   // The new columns come from supabase/news_intelligence.sql. Say so plainly if it has not been run.
-  const probe = await db.from("news").select("hidden,summary_basis,key_points").limit(1);
+  const probe = await db.from("news").select("hidden,summary_basis,key_points,summary_hi").limit(1);
   if (probe.error) return Response.json({ error: `Run supabase/news_intelligence.sql first: ${probe.error.message}` }, { status: 409 });
 
-  const stats = { added: 0, duplicates: 0, found: 0, analyzed: 0, enriched: 0, filtered: 0, hidden: 0, withArticle: 0, pollsCreated: 0 };
+  const stats = { added: 0, duplicates: 0, found: 0, analyzed: 0, enriched: 0, translated: 0, filtered: 0, hidden: 0, withArticle: 0, pollsCreated: 0 };
   const failed: string[] = [];
   const analysisFailed: string[] = [];
   const enrichFailed: string[] = [];
   const pollFailed: string[] = [];
+  const translateFailed: string[] = [];
 
   if (ai) await db.from("profiles").upsert(BOT_PROFILE, { onConflict: "id", ignoreDuplicates: true });
 
@@ -253,6 +257,40 @@ export async function GET(request: Request) {
       enrichFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
     }
 
+    // ---- 3b. Hindi version of every story that has a summary (headline, summary, key points, why it matters) ----------
+    try {
+      const { data: untranslated, error: trErr } = await db
+        .from("news")
+        .select("id,headline,full_summary,key_points,why_it_matters,cluster_id")
+        .eq("community_slug", c.slug)
+        .eq("hidden", false)
+        .is("translated_at", null)
+        .not("full_summary", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(24);
+      if (trErr) throw new Error(trErr.message);
+      const rows = (untranslated ?? []).filter((p) => !p.cluster_id || p.cluster_id === p.id).slice(0, TRANSLATE_PER_RUN);
+      for (let i = 0; i < rows.length; i += TRANSLATE_BATCH) {
+        const batch = rows.slice(i, i + TRANSLATE_BATCH);
+        try {
+          const done = await translateStories(batch.map((r) => ({ id: r.id, headline: r.headline, summary: r.full_summary, keyPoints: r.key_points ?? [], whyItMatters: r.why_it_matters ?? [] })));
+          for (const h of done) {
+            const { error: upErr } = await db
+              .from("news")
+              .update({ title_hi: h.headline, summary_hi: h.summary, key_points_hi: h.keyPoints, why_it_matters_hi: h.whyItMatters, translated_at: new Date().toISOString() })
+              .eq("id", h.id);
+            if (upErr) throw new Error(upErr.message);
+            stats.translated += 1;
+            log("news.translated", { community: c.slug, id: h.id });
+          }
+        } catch (e) {
+          translateFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
+        }
+      }
+    } catch (e) {
+      translateFailed.push(`${c.slug} (${e instanceof Error ? e.message : "error"})`);
+    }
+
     // ---- 4. poll: one Bullish / Neutral / Bearish vote per event. No discussion text and no comments. -------------------
     try {
       const { data: rows, error: rowErr } = await db.from("news").select("id,headline,cluster_id").eq("community_slug", c.slug).eq("hidden", false).gte("created_at", new Date(Date.now() - 4 * 86_400_000).toISOString());
@@ -289,5 +327,5 @@ export async function GET(request: Request) {
   );
 
   log("cron.done", { ...stats, communities: communities?.length ?? 0 });
-  return Response.json({ ...stats, communities: communities?.length ?? 0, aiEnabled: ai, failed, analysisFailed, enrichFailed, pollFailed });
+  return Response.json({ ...stats, communities: communities?.length ?? 0, aiEnabled: ai, failed, analysisFailed, enrichFailed, translateFailed, pollFailed });
 }
