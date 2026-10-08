@@ -107,6 +107,20 @@ export const mapNews = (r: Row): NewsItem => ({
   ageMin: minutesSince(r.created_at),
   discussionCount: r.discussion_count,
   analysis: r.sentiment ? { score: r.sentiment_score ?? 0, tone: r.sentiment, topic: r.topic ?? "", summary: r.summary ?? "" } : undefined,
+  clusterId: r.cluster_id ?? undefined,
+  intel: r.full_summary
+    ? {
+        summary: r.full_summary,
+        whyItMatters: r.why_it_matters ?? [],
+        eventType: r.event_type ?? "Other",
+        direction: r.impact_direction ?? "neutral",
+        strength: r.impact_strength ?? "low",
+        signalScore: r.signal_score ?? 0,
+        signalConfidence: Number(r.signal_confidence ?? 0),
+        stocks: Array.isArray(r.affected_stocks) ? r.affected_stocks : [],
+        sectors: r.affected_sectors ?? [],
+      }
+    : undefined,
 });
 
 export const mapNotification = (r: Row): Notification => ({

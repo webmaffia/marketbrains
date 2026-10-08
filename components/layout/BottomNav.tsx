@@ -9,7 +9,7 @@ import s from "./BottomNav.module.scss";
 const items: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/discover", label: "Discover", icon: "compass" },
-  { href: "/polls", label: "Polls", icon: "poll" },
+  { href: "/news", label: "News", icon: "globe" },
   { href: "/following", label: "Following", icon: "users" },
   { href: "/notifications", label: "Alerts", icon: "bell" },
   { href: "/profile", label: "Profile", icon: "user" },
@@ -19,7 +19,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const { isLoggedIn, unreadCount } = useStore();
 
-  if (pathname === "/welcome" || pathname === "/create") return null;
+  if (pathname === "/welcome") return null;
 
   const unread = isLoggedIn ? unreadCount : 0;
 

@@ -6,12 +6,11 @@ import { Icon } from "@/components/ui/Icon";
 import { SocialIcon } from "@/components/ui/SocialIcon";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useState } from "react";
-import { PostList } from "@/components/post/PostList";
 import { useStore } from "@/features/store/StoreProvider";
 import { compact } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
-import type { Community, Directory, Post, PublicContact, User } from "@/types";
+import type { Community, PublicContact, User } from "@/types";
 import { AvatarEditor } from "./AvatarEditor";
 import { FollowButton } from "./FollowButton";
 import s from "./UserProfile.module.scss";
@@ -20,23 +19,19 @@ const SOCIAL_LABELS: Record<string, string> = { x: "X", linkedin: "LinkedIn", yo
 
 interface Props {
   user: User;
-  posts: Post[];
   communities: Community[];
-  dir: Directory;
   isSelf?: boolean;
   /** Contact details this person chose to make public (server-fetched). */
   contact?: PublicContact;
 }
 
-export function UserProfile({ user, posts, communities, dir, isSelf: selfProp, contact }: Props) {
+export function UserProfile({ user, communities, isSelf: selfProp, contact }: Props) {
   const { isLoggedIn, hydrated, following, joined, session, showToast, contact: myContact, muted, toggleMute } = useStore();
   const [editing, setEditing] = useState(false);
   const isSelf = selfProp ?? session?.userId === user.id;
   // Server counts include follows made before the page loaded; offset by what changes afterwards.
   const [wasFollowing, setWasFollowing] = useState<boolean | null>(null);
   if (hydrated && wasFollowing === null) setWasFollowing(following.includes(user.id));
-  // Quality signals lead; follower count is deliberately secondary.
-  const c = user.contributions;
   const followers = user.followers + (wasFollowing === null ? 0 : Number(following.includes(user.id)) - Number(wasFollowing));
   const shareProfile = async () => {
     const url = `${location.origin}/user/${user.username}`;
@@ -121,20 +116,6 @@ export function UserProfile({ user, posts, communities, dir, isSelf: selfProp, c
       </section>
       {isSelf && <EditProfileSheet open={editing} onClose={() => setEditing(false)} />}
 
-      <dl className={s.stats}>
-        <div>
-          <dt>Helpful</dt>
-          <dd>{compact(c.helpful)}</dd>
-        </div>
-        <div>
-          <dt>Discussions</dt>
-          <dd>{compact(c.discussions)}</dd>
-        </div>
-        <div>
-          <dt>Comments</dt>
-          <dd>{compact(c.comments)}</dd>
-        </div>
-      </dl>
       <p className={s.follows}>
         {compact(followers)} followers · {compact(user.following)} following
       </p>
@@ -155,17 +136,6 @@ export function UserProfile({ user, posts, communities, dir, isSelf: selfProp, c
         </section>
       )}
 
-      <section aria-labelledby="contrib">
-        <h2 id="contrib" className={s.h}>
-          Discussions
-        </h2>
-        <PostList
-          posts={posts}
-          dir={dir}
-          showMuted
-          empty={<p className={s.none}>No discussions yet.</p>}
-        />
-      </section>
     </>
   );
 }

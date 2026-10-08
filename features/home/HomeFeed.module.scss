@@ -1,19 +1,142 @@
 @use "tokens" as *;
 
-// Anchors right under the (also sticky) Home header, so switching feeds never needs a scroll-up first.
-.tabsBar {
-  position: sticky;
-  top: calc(var(--safe-top) + 56px);
-  z-index: 35;
-  padding: var(--sp-2) 0;
-  background: var(--surface);
-  border-bottom: 0.5px solid var(--line);
+.wrap {
+  position: relative;
 }
-.heading {
-  padding: var(--sp-3) var(--sp-3) 2px;
-  font-size: 13px;
-  font-weight: 700;
+// One card per screen, between the header and the bottom bar. Swipe up for the next story.
+.pager {
+  // 56px header + 70px mood strip + 45px filter tabs.
+  height: calc(100dvh - 56px - 70px - 45px - var(--safe-top) - var(--nav-total));
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+}
+.slide {
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: var(--sp-6) var(--sp-5) var(--sp-5);
+  background: var(--surface);
+  overflow-y: auto;
+}
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-4);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   color: var(--text-3);
+  font-size: 12.5px;
+  font-weight: 650;
+  span + span::before {
+    content: "·";
+    margin-right: 10px;
+  }
+}
+.bull {
+  color: var(--bull);
+}
+.bear {
+  color: var(--bear);
+}
+.headline {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.text {
+  color: var(--text-2);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 0.5px solid var(--line);
+  font-size: 15px;
+  font-weight: 700;
+  a:first-child {
+    color: var(--accent);
+  }
+  a:last-child {
+    color: var(--text-3);
+    font-weight: 600;
+  }
+}
+.count {
+  position: absolute;
+  top: 55px;
+  right: var(--sp-4);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.why h3,
+.h {
+  margin-bottom: 8px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+}
+.why ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.why li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15.5px;
+  line-height: 1.45;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+}
+.signal {
+  color: var(--text-3);
+  font-size: 13px;
+  strong {
+    color: var(--text);
+  }
+}
+
+// A gradient wash from the top so the tone reads before the words do. Mixed into the surface so it works in dark mode too.
+.bg_bull {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bull) 24%, var(--surface)) 0%, color-mix(in srgb, var(--bull) 8%, var(--surface)) 45%, var(--surface) 100%);
+}
+.bg_bear {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bear) 24%, var(--surface)) 0%, color-mix(in srgb, var(--bear) 8%, var(--surface)) 45%, var(--surface) 100%);
+}
+.bg_neutral {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-3) 24%, var(--surface)) 0%, color-mix(in srgb, var(--text-3) 8%, var(--surface)) 45%, var(--surface) 100%);
 }

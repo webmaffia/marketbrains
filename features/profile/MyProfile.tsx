@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { PageBanner } from "@/components/layout/PageBanner";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -10,39 +9,26 @@ import { UserProfile } from "@/components/user/UserProfile";
 import { useStore } from "@/features/store/StoreProvider";
 import { ThemeToggle } from "./ThemeToggle";
 import { PushToggle } from "@/features/notifications/PushToggle";
-import { getPostsByUser } from "@/lib/api";
-import type { Community, Directory, Post } from "@/types";
+import type { Community } from "@/types";
 import s from "./MyProfile.module.scss";
 
 interface Props {
   communities: Community[];
-  dir: Directory;
 }
 
-export function MyProfile({ communities, dir }: Props) {
-  const { isLoggedIn, hydrated, profile, session, openAuth, logout, upgrade, saved, muted } = useStore();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const userId = session?.userId;
-
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    getPostsByUser(userId).then((p) => !cancelled && setPosts(p));
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+export function MyProfile({ communities }: Props) {
+  const { isLoggedIn, hydrated, profile, session, openAuth, logout, upgrade } = useStore();
 
   if (!hydrated) return null;
 
   if (!isLoggedIn) {
     return (
       <>
-      <PageBanner title="Your investing identity" text="Build reputation through the quality of your contributions." icon="user" hue={165} />
+      <PageBanner title="Your investing identity" text="Follow companies and share what you think of the news." icon="user" hue={165} />
       <EmptyState
         icon="user"
         title="Your investing identity"
-        text="Sign in to build your profile, earn reputation and join conversations."
+        text="Sign in to build your profile, follow communities and vote on the news."
         action={
           <div className={s.col}>
             <Button onClick={() => openAuth("Sign in to your MarketBrains profile")}>Sign in</Button>
@@ -63,24 +49,8 @@ export function MyProfile({ communities, dir }: Props) {
 
   return (
     <>
-      <UserProfile user={profile} posts={posts} communities={communities} dir={dir} isSelf />
+      <UserProfile user={profile} communities={communities} isSelf />
       <div className={s.menu}>
-        <Link href="/profile/saved" className={s.row}>
-          <Icon name="bookmark" size={20} />
-          <span>Saved posts</span>
-          <span className={s.val}>{saved.length}</span>
-          <Icon name="chevron" size={18} />
-        </Link>
-        <Link href="/leaderboard" className={s.row}>
-          <Icon name="trophy" size={20} />
-          <span>Leaderboard</span>
-          <Icon name="chevron" size={18} />
-        </Link>
-        <Link href="/profile/not-interested" className={s.row}>
-          <Icon name="block" size={20} />
-          <span>Not interested</span>
-          <span className={s.val}>{muted.length}</span>
-        </Link>
         <PushToggle />
         <ThemeToggle />
         {profile.isAdmin && (

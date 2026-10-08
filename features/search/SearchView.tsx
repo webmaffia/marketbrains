@@ -5,34 +5,30 @@ import { PageBanner } from "@/components/layout/PageBanner";
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { CommunityCard } from "@/components/community/CommunityCard";
-import { PostList } from "@/components/post/PostList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { TopicChip } from "@/components/ui/TopicChip";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { BackButton } from "@/components/layout/BackButton";
 import { FollowButton } from "@/components/user/FollowButton";
-import type { Community, Directory, Post, User } from "@/types";
+import type { Community, User } from "@/types";
 import s from "./SearchView.module.scss";
 
 interface Props {
   communities: Community[];
   users: User[];
-  posts: Post[];
-  dir: Directory;
 }
 
-const suggestions = ["Reliance", "NVIDIA", "Bitcoin", "Dividend", "Earnings", "Beginners"];
+const suggestions = ["Reliance", "TCS", "HDFC Bank", "Infosys", "NIFTY 50", "ITC"];
 
-export function SearchView({ communities, users, posts, dir }: Props) {
+export function SearchView({ communities, users }: Props) {
   const [q, setQ] = useState("");
   const deferred = useDeferredValue(q).trim().toLowerCase();
 
   const match = (...fields: string[]) => fields.some((f) => f.toLowerCase().includes(deferred));
   const cs = deferred ? communities.filter((c) => match(c.name, c.slug, c.tagline)) : [];
   const us = deferred ? users.filter((u) => match(u.name, u.username, u.bio)) : [];
-  const ps = deferred ? posts.filter((p) => match(p.title, p.body)) : [];
-  const none = deferred && !cs.length && !us.length && !ps.length;
+  const none = deferred && !cs.length && !us.length;
 
   return (
     <>
@@ -43,7 +39,7 @@ export function SearchView({ communities, users, posts, dir }: Props) {
 
       {!deferred && (
         <>
-        <PageBanner size="slim" title="Explore the conversation" text="Companies, people and ideas." icon="search" hue={190} />
+        <PageBanner size="slim" title="Find a company" text="Stocks, indices and people." icon="search" hue={190} />
         <section className={s.sugg} aria-label="Suggested searches">
           <h2>Try searching for</h2>
           <div className={s.chips}>
@@ -85,12 +81,6 @@ export function SearchView({ communities, users, posts, dir }: Props) {
                 </div>
               ))}
             </div>
-          </section>
-        )}
-        {ps.length > 0 && (
-          <section>
-            <h2 className={s.h}>Discussions</h2>
-            <PostList posts={ps} dir={dir} />
           </section>
         )}
       </div>

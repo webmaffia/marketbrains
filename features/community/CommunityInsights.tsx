@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Icon } from "@/components/ui/Icon";
 import { timeAgo } from "@/lib/format";
 import { buildInsights, type Outlook } from "@/lib/insights";
 import type { NewsItem, Post } from "@/types";
@@ -111,7 +110,7 @@ export function CommunityInsights({ name, posts, news, changePct }: { name: stri
         </div>
       )}
 
-      {(i.concerns.length > 0 || i.asks.length > 0) && (
+      {i.concerns.length > 0 && (
         <div className={s.block}>
           {i.concerns.length > 0 && (
             <>
@@ -123,25 +122,10 @@ export function CommunityInsights({ name, posts, news, changePct }: { name: stri
               </ul>
             </>
           )}
-          {i.asks.length > 0 && (
-            <>
-              <h4>Unanswered questions</h4>
-              <ul className={s.qs}>
-                {i.asks.map((q) => (
-                  <li key={q.id}>
-                    <Link href={`/community/${q.communitySlug}/post/${q.id}`}>
-                      {q.title}
-                      <Icon name="chevron" size={16} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
         </div>
       )}
 
-      <p className={s.fine}>Generated automatically from member posts and news headlines. Opinions, not investment advice.</p>
+      <p className={s.fine}>Generated automatically from news headlines. Opinions, not investment advice.</p>
     </section>
   );
 }

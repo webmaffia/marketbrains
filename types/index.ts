@@ -122,6 +122,37 @@ export interface NewsItem {
   discussionCount: number;
   /** AI read of the headline, filled by the daily ingest job. */
   analysis?: NewsAnalysis;
+  /** Structured summary, relevance and event signal. Missing until the enrichment step has run. */
+  intel?: NewsIntel;
+  /** Stories about the same event share a cluster. This item is the first of them. */
+  clusterId?: string;
+  /** Other outlets that covered the same event, including this one's. */
+  sources?: { source: string; url?: string }[];
+}
+
+export type StockRelationship = "direct" | "supplier" | "customer" | "competitor" | "indirect" | "sector";
+export interface AffectedStock {
+  ticker: string;
+  relationship: StockRelationship;
+  /** Community slug, when the stock has a page here. */
+  slug?: string;
+  name?: string;
+}
+
+/** MarketBrains' reading of how significant an event is. Not a recommendation and not a price forecast. */
+export interface NewsIntel {
+  /** About 50 words, written from the facts in the story. */
+  summary: string;
+  whyItMatters: string[];
+  eventType: string;
+  direction: "positive" | "negative" | "neutral" | "mixed";
+  strength: "low" | "medium" | "high";
+  /** 0 to 100: how significant the event looks. */
+  signalScore: number;
+  /** 0 to 1: how sure the reading is. */
+  signalConfidence: number;
+  stocks: AffectedStock[];
+  sectors: string[];
 }
 
 export interface NewsAnalysis {

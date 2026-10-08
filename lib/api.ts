@@ -5,6 +5,7 @@
  */
 import { BOT_ID } from "@/lib/bot";
 import { mapLeaderboardRow, type Period } from "@/lib/leaderboard";
+import { groupClusters } from "@/lib/newsIntel";
 import { supabase } from "@/lib/supabase";
 import { mapAsset, mapComment, mapCommunity, mapNews, mapPost, mapTopic, mapUser, POST_SELECT, USER_SELECT } from "@/lib/mappers";
 import type { Asset, Comment, Community, LeaderboardEntry, NewsItem, Post, PublicContact, SentimentCounts, Topic, User } from "@/types";
@@ -89,7 +90,7 @@ export async function getComments(postId: string): Promise<Comment[]> {
 }
 
 export async function getNews(slug: string): Promise<NewsItem[]> {
-  return check(await supabase.from("news").select("*").eq("community_slug", slug).order("created_at", { ascending: false }), "news").map(mapNews);
+  return groupClusters(check(await supabase.from("news").select("*").eq("community_slug", slug).order("created_at", { ascending: false }), "news").map(mapNews));
 }
 
 export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
@@ -100,11 +101,40 @@ export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
 /** Everything published in the last `days` days, across all communities (for the market-wide meter). */
 export async function getNewsSince(days: number): Promise<NewsItem[]> {
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
-  return check(await supabase.from("news").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(1000), "news").map(mapNews);
+  return groupClusters(check(await supabase.from("news").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(1000), "news").map(mapNews));
 }
 
 export async function getAllNews(): Promise<NewsItem[]> {
-  return check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(30), "news").map(mapNews);
+  return groupClusters(check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(60), "news").map(mapNews)).slice(0, 30);
+}
+
+/** A news event together with the discussion (and poll) opened for it, if any. */
+export interface NewsEntry {
+  news: NewsItem;
+  post?: Post;
+}
+
+async function withPosts(items: NewsItem[]): Promise<NewsEntry[]> {
+  if (!items.length) return [];
+  const rows = check(await supabase.from("posts").select(POST_SELECT).in("news_id", items.map((n) => n.id)).order("created_at", { ascending: false }), "discussions");
+  const byNews = new Map<string, Post>();
+  for (const r of rows as Record<string, unknown>[]) if (!byNews.has(r.news_id as string)) byNews.set(r.news_id as string, mapPost(r));
+  return items.map((news) => ({ news, post: byNews.get(news.id) }));
+}
+
+/** The news feed: recent events, one entry per event, newest first. */
+export async function getNewsFeed(days = 7): Promise<NewsEntry[]> {
+  return withPosts((await getNewsSince(days)).slice(0, 120));
+}
+
+/** One event for its detail page, with every outlet that covered it. */
+export async function getNewsEntry(id: string): Promise<NewsEntry | undefined> {
+  const row = check(await supabase.from("news").select("*").eq("id", id).maybeSingle(), "news") as Record<string, string> | null;
+  if (!row) return undefined;
+  const clusterId = row.cluster_id ?? row.id;
+  const siblings = check(await supabase.from("news").select("*").or(`id.eq.${clusterId},cluster_id.eq.${clusterId}`).order("created_at"), "news").map(mapNews);
+  const head = groupClusters(siblings)[0] ?? mapNews(row);
+  return (await withPosts([head]))[0];
 }
 
 /** Contact details a member chose to make public. Private fields never leave the database. */

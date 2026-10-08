@@ -44,7 +44,7 @@ export function WelcomeScreen() {
           Where investors <span>think together</span>
         </h1>
         <p className={s.text}>
-          A global investor community. Follow assets, discuss ideas, debate perspectives and learn from people you trust.
+          Follow India&apos;s biggest companies. Get the news in short, see why it matters and vote on what you think.
         </p>
 
         <ul className={s.points}>

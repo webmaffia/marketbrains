@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "MarketBrains",
     short_name: "MarketBrains",
-    description: "A global investor community. Follow, discuss, debate and learn together.",
+    description: "Market news in short, why it matters, and what investors think.",
     start_url: "/",
     scope: "/",
     display: "standalone",

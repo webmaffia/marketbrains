@@ -21,17 +21,17 @@ const RANGES: { id: Range; label: string }[] = [
 ];
 
 /** Semicircle meter for the tone of the news, switchable between today and the last 7 days. Hidden until a window has two stories. */
-export function NewsMeter({ meters, name }: { meters: NewsMeters; name: string }) {
+export function NewsMeter({ meters, name, compact = false }: { meters: NewsMeters; name: string; /** Gauge and counts only: no topic chips or "Moving the meter" list. */ compact?: boolean }) {
   const [range, setRange] = useState<Range>("today");
   if (!meters.today && !meters.week) return null;
   // Fall back to whichever window has data, so a quiet day still shows the week.
   const active: Range = meters[range] ? range : range === "today" ? "week" : "today";
   const meter = meters[active];
   if (!meter) return null;
-  return <Gauge meter={meter} name={name} range={active} setRange={setRange} available={{ today: !!meters.today, week: !!meters.week }} />;
+  return <Gauge meter={meter} name={name} range={active} setRange={setRange} compact={compact} available={{ today: !!meters.today, week: !!meters.week }} />;
 }
 
-function Gauge({ meter, name, range, setRange, available }: { meter: Meter; name: string; range: Range; setRange: (r: Range) => void; available: Record<Range, boolean> }) {
+function Gauge({ meter, name, range, setRange, available, compact }: { meter: Meter; name: string; range: Range; setRange: (r: Range) => void; available: Record<Range, boolean>; compact: boolean }) {
   const angle = -90 + ((meter.value + 1) / 2) * 180;
   const gradId = `news-${name.replace(/\W/g, "")}-${range}`;
   const pct = (n: number) => Math.round((n / meter.total) * 100);
@@ -86,7 +86,7 @@ function Gauge({ meter, name, range, setRange, available }: { meter: Meter; name
         <span className={s.lr}>{meter.bear} negative</span>
       </div>
 
-      {meter.themes.length > 0 && (
+      {!compact && meter.themes.length > 0 && (
         <ul className={s.themes} aria-label="What the news is about">
           {meter.themes.map((t) => (
             <li key={t.name}>
@@ -96,7 +96,7 @@ function Gauge({ meter, name, range, setRange, available }: { meter: Meter; name
         </ul>
       )}
 
-      {meter.drivers.length > 0 && (
+      {!compact && meter.drivers.length > 0 && (
         <div className={s.drivers}>
           <h4>Moving the meter</h4>
           <ul>

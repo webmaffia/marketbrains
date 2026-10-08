@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
-const description = "A global investor community. Follow assets, discuss ideas, debate perspectives and learn from people you trust.";
+const description = "Follow India's biggest companies. Get the news in short, see why it matters and vote on what you think.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
