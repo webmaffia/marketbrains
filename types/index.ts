@@ -126,6 +126,8 @@ export interface NewsItem {
   intel?: NewsIntel;
   /** Stories about the same event share a cluster. This item is the first of them. */
   clusterId?: string;
+  /** Filtered out as generic or off topic. Kept in the database so it is not fetched again. */
+  hidden?: boolean;
   /** Other outlets that covered the same event, including this one's. */
   sources?: { source: string; url?: string }[];
 }
@@ -143,6 +145,10 @@ export interface AffectedStock {
 export interface NewsIntel {
   /** About 50 words, written from the facts in the story. */
   summary: string;
+  /** Concrete facts from the story: figures, dates, decisions. */
+  keyPoints: string[];
+  /** What the summary was written from: the article, its short description, or the headline alone. */
+  basis?: "article" | "snippet" | "headline";
   whyItMatters: string[];
   eventType: string;
   direction: "positive" | "negative" | "neutral" | "mixed";

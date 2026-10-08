@@ -6,6 +6,9 @@
 import { BOT_ID } from "@/lib/bot";
 import { mapLeaderboardRow, type Period } from "@/lib/leaderboard";
 import { groupClusters } from "@/lib/newsIntel";
+
+/** Stories the filter marked generic stay in the database (so they are not fetched again) but are never shown. */
+const visible = <T extends { hidden?: boolean }>(items: T[]) => items.filter((n) => !n.hidden);
 import { supabase } from "@/lib/supabase";
 import { mapAsset, mapComment, mapCommunity, mapNews, mapPost, mapTopic, mapUser, POST_SELECT, USER_SELECT } from "@/lib/mappers";
 import type { Asset, Comment, Community, LeaderboardEntry, NewsItem, Post, PublicContact, SentimentCounts, Topic, User } from "@/types";
@@ -90,7 +93,7 @@ export async function getComments(postId: string): Promise<Comment[]> {
 }
 
 export async function getNews(slug: string): Promise<NewsItem[]> {
-  return groupClusters(check(await supabase.from("news").select("*").eq("community_slug", slug).order("created_at", { ascending: false }), "news").map(mapNews));
+  return groupClusters(visible(check(await supabase.from("news").select("*").eq("community_slug", slug).order("created_at", { ascending: false }), "news").map(mapNews)));
 }
 
 export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
@@ -101,11 +104,11 @@ export async function getNewsItem(id: string): Promise<NewsItem | undefined> {
 /** Everything published in the last `days` days, across all communities (for the market-wide meter). */
 export async function getNewsSince(days: number): Promise<NewsItem[]> {
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
-  return groupClusters(check(await supabase.from("news").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(1000), "news").map(mapNews));
+  return groupClusters(visible(check(await supabase.from("news").select("*").gte("created_at", since).order("created_at", { ascending: false }).limit(1000), "news").map(mapNews)));
 }
 
 export async function getAllNews(): Promise<NewsItem[]> {
-  return groupClusters(check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(60), "news").map(mapNews)).slice(0, 30);
+  return groupClusters(visible(check(await supabase.from("news").select("*").order("created_at", { ascending: false }).limit(60), "news").map(mapNews))).slice(0, 30);
 }
 
 /** A news event together with the discussion (and poll) opened for it, if any. */

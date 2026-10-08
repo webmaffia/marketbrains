@@ -258,3 +258,9 @@ create table if not exists public.news_outcomes (
 alter table public.news_outcomes enable row level security;
 drop policy if exists "public read" on public.news_outcomes;
 create policy "public read" on public.news_outcomes for select using (true);
+
+-- Longer, article-based summaries and the generic-news filter.
+alter table public.news add column if not exists key_points      text[] not null default '{}';
+alter table public.news add column if not exists summary_basis   text check (summary_basis in ('article', 'snippet', 'headline'));
+alter table public.news add column if not exists hidden          boolean not null default false;
+create index if not exists news_hidden_idx on public.news (hidden) where hidden;

@@ -108,9 +108,12 @@ export const mapNews = (r: Row): NewsItem => ({
   discussionCount: r.discussion_count,
   analysis: r.sentiment ? { score: r.sentiment_score ?? 0, tone: r.sentiment, topic: r.topic ?? "", summary: r.summary ?? "" } : undefined,
   clusterId: r.cluster_id ?? undefined,
+  hidden: r.hidden || undefined,
   intel: r.full_summary
     ? {
         summary: r.full_summary,
+        keyPoints: r.key_points ?? [],
+        basis: r.summary_basis ?? undefined,
         whyItMatters: r.why_it_matters ?? [],
         eventType: r.event_type ?? "Other",
         direction: r.impact_direction ?? "neutral",

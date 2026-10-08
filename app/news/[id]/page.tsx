@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { PollCard } from "@/components/post/PollCard";
 import { AffectedStocks, DISCLAIMER, EventSignal, InvestorSentiment, SectorChips } from "@/features/news/NewsParts";
-import { getCommunity, getNewsEntry } from "@/lib/api";
+import { getAsset, getCommunity, getNews, getNewsEntry } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
+import { scoreHeadline } from "@/lib/newsSentiment";
+import { getQuote } from "@/lib/prices";
 import s from "./page.module.scss";
 
 export async function generateMetadata({ params }: PageProps<"/news/[id]">): Promise<Metadata> {
@@ -22,6 +24,10 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
   const { news, post } = entry;
   const intel = news.intel;
   const community = await getCommunity(news.communitySlug);
+  const asset = await getAsset(community?.assetId);
+  const [quote, more] = await Promise.all([getQuote(asset), getNews(news.communitySlug)]);
+  const related = more.filter((m) => m.id !== news.id && (m.clusterId ?? m.id) !== (news.clusterId ?? news.id)).slice(0, 5);
+  const TONE = { bull: "Positive", bear: "Negative", neutral: "Neutral" } as const;
   const sources = news.sources ?? [{ source: news.source, url: news.url }];
 
   return (
@@ -39,6 +45,18 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
         </p>
         <h1 className={s.h1}>{news.headline}</h1>
         {intel ? <p className={s.summary}>{intel.summary}</p> : news.analysis?.summary && <p className={s.summary}>{news.analysis.summary}</p>}
+        {intel?.basis && intel.basis !== "article" && <p className={s.note}>{intel.basis === "snippet" ? "This summary is based on the short description the source gives. Open the original for the full story." : "This summary is based on the headline only. Open the original for the full story."}</p>}
+
+        {intel && intel.keyPoints.length > 0 && (
+          <section>
+            <h2>Key points</h2>
+            <ul className={s.list}>
+              {intel.keyPoints.map((k) => (
+                <li key={k}>{k}</li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {intel && (
           <>
@@ -62,6 +80,20 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
           </>
         )}
 
+        {quote && asset && (
+          <section>
+            <h2>Share price today</h2>
+            <p className={s.price}>
+              <strong>{new Intl.NumberFormat(quote.currency === "INR" ? "en-IN" : "en-US", { style: "currency", currency: quote.currency, maximumFractionDigits: 2 }).format(quote.price)}</strong>
+              <span className={quote.changePct >= 0 ? s.up : s.down}>
+                {quote.changePct >= 0 ? "▲" : "▼"} {Math.abs(quote.changePct).toFixed(2)}%
+              </span>
+              <small>{asset.ticker} · delayed</small>
+            </p>
+            <p className={s.note}>The price move on the latest close. It shows how the stock traded, not that this story caused it.</p>
+          </section>
+        )}
+
         <section>
           <h2>Investor sentiment</h2>
           {post?.poll ? (
@@ -70,6 +102,29 @@ export default async function NewsDetailPage({ params }: PageProps<"/news/[id]">
             <InvestorSentiment />
           )}
         </section>
+
+        {related.length > 0 && (
+          <section>
+            <h2>More on {community?.name ?? "this company"}</h2>
+            <ul className={s.related}>
+              {related.map((r) => {
+                const h = scoreHeadline(r);
+                const text = r.intel?.summary ?? r.analysis?.summary;
+                return (
+                  <li key={r.id}>
+                    <Link href={`/news/${r.id}`}>
+                      <p className={s.rmeta}>
+                        {r.source} · {timeAgo(r.ageMin)} · <span className={s[`tone_${h.tone}`]}>{TONE[h.tone]}</span>
+                      </p>
+                      <p className={s.rhead}>{r.headline}</p>
+                      {text && <p className={s.rtext}>{text}</p>}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         <section>
           <h2>Source</h2>

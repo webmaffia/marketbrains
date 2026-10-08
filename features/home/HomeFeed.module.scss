@@ -82,7 +82,7 @@
 .text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 7;
   overflow: hidden;
   color: var(--text-2);
   font-size: 16px;
@@ -99,7 +99,7 @@
   }
   .text {
     font-size: 15px;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 5;
   }
 }
 .foot {
