@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
 import { RegisterSW } from "@/components/layout/RegisterSW";
 import { ThemeSync } from "@/components/layout/ThemeSync";
@@ -11,6 +11,8 @@ import "@/styles/globals.scss";
 export const dynamic = "force-dynamic";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// Used for news headlines only. Hindi falls back to the system Devanagari font.
+const serif = Newsreader({ subsets: ["latin"], variable: "--font-serif", display: "swap", weight: ["500", "600"] });
 
 const description = "Follow India's biggest companies. Get the news in short, see why it matters and vote on what you think.";
 
@@ -43,7 +45,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${serif.variable}`} suppressHydrationWarning>
       <head>
         {/* Sets a saved Light/Dark choice before first paint; with no choice the system setting applies via CSS. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
