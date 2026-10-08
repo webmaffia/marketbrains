@@ -1,36 +1,55 @@
 @use "tokens" as *;
 
+// The page is a column: header, mood strip, tabs, then the pager takes whatever height is left.
+// No fixed pixel guesses, so it fits any phone and the iPhone Safari toolbars.
 .wrap {
   position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
-// One card per screen, between the header and the bottom bar. Swipe up for the next story.
+// One card per screen. Swipe up for the next story.
 .pager {
-  // 56px header + 70px mood strip + 45px filter tabs.
-  height: calc(100dvh - 56px - 70px - 45px - var(--safe-top) - var(--nav-total));
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 .slide {
   height: 100%;
   scroll-snap-align: start;
+  // One card per swipe: a hard flick still lands on the next card instead of skipping past it.
   scroll-snap-stop: always;
+  // Lets the browser skip painting cards that are far off screen, which keeps swiping smooth.
+  contain: layout paint style;
 }
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
+  gap: var(--sp-3);
   height: 100%;
-  padding: var(--sp-6) var(--sp-5) var(--sp-5);
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
   background: var(--surface);
-  overflow-y: auto;
+  overflow: hidden;
 }
+// The text block centres when there is room and starts at the top when there is not, so nothing is cropped at the top.
 .body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: center;
-  gap: var(--sp-4);
+  gap: var(--sp-3);
+  min-height: 0;
+  > :first-child {
+    margin-top: auto;
+  }
+  > :last-child {
+    margin-bottom: auto;
+  }
 }
 .meta {
   display: flex;
@@ -51,15 +70,37 @@
   color: var(--bear);
 }
 .headline {
-  font-size: 28px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  font-size: 24px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.22;
   letter-spacing: -0.02em;
 }
 .text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
   color: var(--text-2);
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.5;
+}
+// Short phones (iPhone SE, mini, or Safari with its toolbars showing): tighten everything.
+@media (max-height: 700px) {
+  .card {
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  }
+  .headline {
+    font-size: 21px;
+    -webkit-line-clamp: 3;
+  }
+  .text {
+    font-size: 15px;
+    -webkit-line-clamp: 3;
+  }
 }
 .foot {
   display: flex;
@@ -80,7 +121,7 @@
 }
 .count {
   position: absolute;
-  top: 55px;
+  top: 53px;
   right: var(--sp-4);
   padding: 2px 10px;
   border-radius: 999px;
@@ -108,9 +149,13 @@
 }
 .why li {
   position: relative;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   padding-left: 18px;
-  font-size: 15.5px;
-  line-height: 1.45;
+  font-size: 14.5px;
+  line-height: 1.4;
   &::before {
     content: "";
     position: absolute;
@@ -139,4 +184,30 @@
 }
 .bg_neutral {
   background: linear-gradient(180deg, color-mix(in srgb, var(--text-3) 24%, var(--surface)) 0%, color-mix(in srgb, var(--text-3) 8%, var(--surface)) 45%, var(--surface) 100%);
+}
+
+// The headline link covers the whole card, so a tap anywhere opens the story.
+.open {
+  color: inherit;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  &:focus-visible {
+    outline: none;
+    &::after {
+      border-radius: var(--r-lg);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+  }
+}
+// The source link stays separately tappable above the cover.
+.foot a {
+  position: relative;
+  z-index: 2;
+}
+.foot > span {
+  color: var(--accent);
 }

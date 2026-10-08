@@ -13,11 +13,11 @@ export default async function HomePage() {
   const latest = recent.filter((n) => n.ageMin <= 2 * 24 * 60).slice(0, 40);
 
   return (
-    <>
+    <div className="home-screen">
       <WelcomeGate />
       <HomeHeader />
       {(meters.today || meters.week) && <MarketMood meters={meters} />}
       <HomeFeed news={latest.length ? latest : recent.slice(0, 20)} names={names} marketSlugs={communities.filter((c) => c.kind === "market").map((c) => c.slug)} />
-    </>
+    </div>
   );
 }

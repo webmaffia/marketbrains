@@ -192,3 +192,11 @@ ol {
     scroll-behavior: auto !important;
   }
 }
+
+// Home: header, mood strip, filter tabs and the swipe pager share one screen-high column; the pager takes what is left.
+.home-screen {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--nav-total));
+  height: calc(100dvh - var(--nav-total));
+}
